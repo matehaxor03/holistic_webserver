@@ -8,7 +8,7 @@ import (
 
 func main() {
 	var errors []error
-	web_server, web_server_errors := webserver.NewWebServer("5001", "server.crt", "server.key")
+	web_server, web_server_errors := webserver.NewWebServer("5001", "server.crt", "server.key", "127.0.0.1", "5000")
 	if web_server_errors != nil {
 		errors = append(errors, web_server_errors...)	
 	} else {

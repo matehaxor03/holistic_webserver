@@ -12,8 +12,13 @@ type WebServer struct {
 	Start      			func() ([]error)
 }
 
-func NewWebServer(port string, server_crt_path string, server_key_path string) (*WebServer, []error) {
+func NewWebServer(port string, server_crt_path string, server_key_path string, queue_domain_name string, queue_port string) (*WebServer, []error) {
 	var errors []error
+
+	domain_name, domain_name_errors := class.NewDomainName(&queue_domain_name)
+	if domain_name_errors != nil {
+		errors = append(errors, domain_name_errors...)
+	}
 	//var this_holisic_queue_server *HolisticQueueServer
 
 	//todo: add filters to fields
@@ -21,6 +26,8 @@ func NewWebServer(port string, server_crt_path string, server_key_path string) (
 		"[port]": class.Map{"value": class.CloneString(&port), "mandatory": true},
 		"[server_crt_path]": class.Map{"value": class.CloneString(&server_crt_path), "mandatory": true},
 		"[server_key_path]": class.Map{"value": class.CloneString(&server_key_path), "mandatory": true},
+		"[queue_port]": class.Map{"value": class.CloneString(&queue_port), "mandatory": true},
+		"[queue_domain_name]": class.Map{"value": class.CloneDomainName(domain_name), "mandatory": true},
 	}
 
 	getPort := func() *string {
@@ -36,6 +43,16 @@ func NewWebServer(port string, server_crt_path string, server_key_path string) (
 	getServerKeyPath := func() *string {
 		key, _ := data.M("[server_key_path]").GetString("value")
 		return class.CloneString(key)
+	}
+
+	
+	getQueuePort := func() *string {
+		port, _ := data.M("[queue_port]").GetString("value")
+		return class.CloneString(port)
+	}
+
+	getQueueDomainName := func() *class.DomainName {
+		return class.CloneDomainName(data.M("[queue_domain_name]").GetObject("value").(*class.DomainName))
 	}
 
 	validate := func() []error {
@@ -79,6 +96,8 @@ func NewWebServer(port string, server_crt_path string, server_key_path string) (
 			
 			ioutil.ReadAll(req.Body);
 			// todo call queue
+			getQueuePort()
+			getQueueDomainName()
 		} else {
 			w.Write([]byte(formatRequest(req)))
 		}
