@@ -1,22 +1,27 @@
 package main
 
 import (
-	"log"
-	"net/http"
+	webserver "github.com/matehaxor03/holistic_webserver/webserver"
+	"os"
+	"fmt"
 )
 
-func ProcessRequest(w http.ResponseWriter, req *http.Request) {
-	w.Write([]byte("hello world"))
-}
-
 func main() {
-	buildHandler := http.FileServer(http.Dir("static"))
-	http.Handle("/", buildHandler)
-
-	http.HandleFunc("/api", ProcessRequest)
-
-	err := http.ListenAndServeTLS(":5001", "server.crt", "server.key", nil)
-	if err != nil {
-		log.Fatal("ListenAndServe: ", err)
+	var errors []error
+	web_server, web_server_errors := webserver.NewWebServer("5001", "server.crt", "server.key")
+	if web_server_errors != nil {
+		errors = append(errors, web_server_errors...)	
+	} else {
+		web_server_start_errors := web_server.Start()
+		if web_server_start_errors != nil {
+			errors = append(errors, web_server_start_errors...)
+		}
 	}
+
+	if len(errors) > 0 {
+		fmt.Println(errors)
+		os.Exit(1)
+	}
+	
+	os.Exit(0)
 }
