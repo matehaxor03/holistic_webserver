@@ -5,6 +5,9 @@ import (
 	"fmt"
 	"strings"
 	"io/ioutil"
+	"encoding/json"
+	"time"
+	"bytes"
 	class "github.com/matehaxor03/holistic_db_client/class"
 )
 
@@ -93,11 +96,39 @@ func NewWebServer(port string, server_crt_path string, server_key_path string, q
 
 	processRequest := func(w http.ResponseWriter, req *http.Request) {
 		if req.Method == "POST" || req.Method == "PATCH" || req.Method == "PUT" {
-			
-			ioutil.ReadAll(req.Body);
-			// todo call queue
-			getQueuePort()
-			getQueueDomainName()
+			json_payload := class.Map{}
+			body_payload, body_payload_error := ioutil.ReadAll(req.Body);
+			if body_payload_error != nil {
+				w.Write([]byte(body_payload_error.Error()))
+			} else {
+				json.Unmarshal([]byte(body_payload), &json_payload)
+				uuid, _ := ioutil.ReadFile("/proc/sys/kernel/random/uuid")
+				trace_id := fmt.Sprintf("%v%s", time.Now().UnixNano(), string(uuid))
+				json_payload.SetString("trace_id", &trace_id)
+
+				json_bytes := []byte(json_payload.ToJSONString())
+				json_reader := bytes.NewReader(json_bytes)
+
+				queue_url := fmt.Sprintf("http://%s:%s/", *getQueueDomainName(), *getQueuePort())
+				request, request_error := http.NewRequest(http.MethodPost, queue_url, json_reader)
+
+				if request_error != nil {
+					w.Write([]byte(request_error.Error()))
+				} else {
+					request.Header.Set("Content-Type", "application/json")
+
+					client := http.Client{
+						Timeout: 120 * time.Second,
+					}
+
+					_, http_response_error := client.Do(request)
+					if http_response_error != nil {
+						w.Write([]byte(http_response_error.Error()))
+					} else {
+						w.Write([]byte("ok"))
+					}
+				}
+			}
 		} else {
 			w.Write([]byte(formatRequest(req)))
 		}
