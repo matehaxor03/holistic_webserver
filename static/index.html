@@ -2,5 +2,19 @@
 
 <body>
     <div>hello world</div>
+
+    <script>
+        var url = 'https://127.0.0.1:5001/api';
+        var params = '{"param1":"value1","param2":"value2", "message_type":"get_tables"}';
+        var http = new XMLHttpRequest();
+
+        http.open('POST', url, true);
+
+        http.setRequestHeader('Content-Type', 'application/json');
+
+        http.send(JSON.stringify(params));
+
+
+    </script>
 </body>
 </html>

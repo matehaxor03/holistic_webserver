@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"time"
 	"bytes"
+	"crypto/tls"
 	class "github.com/matehaxor03/holistic_db_client/class"
 )
 
@@ -17,6 +18,15 @@ type WebServer struct {
 
 func NewWebServer(port string, server_crt_path string, server_key_path string, queue_domain_name string, queue_port string) (*WebServer, []error) {
 	var errors []error
+
+	transport_config := &http.Transport{
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+	}
+
+	http_client := http.Client{
+		Timeout: 120 * time.Second,
+		Transport: transport_config,
+	}
 
 	domain_name, domain_name_errors := class.NewDomainName(&queue_domain_name)
 	if domain_name_errors != nil {
@@ -57,6 +67,8 @@ func NewWebServer(port string, server_crt_path string, server_key_path string, q
 	getQueueDomainName := func() *class.DomainName {
 		return class.CloneDomainName(data.M("[queue_domain_name]").GetObject("value").(*class.DomainName))
 	}
+
+	queue_url := fmt.Sprintf("https://%s:%s/", *(getQueueDomainName().GetDomainName()), *getQueuePort())
 
 	validate := func() []error {
 		return class.ValidateData(data, "WebServer")
@@ -109,19 +121,13 @@ func NewWebServer(port string, server_crt_path string, server_key_path string, q
 				json_bytes := []byte(json_payload.ToJSONString())
 				json_reader := bytes.NewReader(json_bytes)
 
-				queue_url := fmt.Sprintf("http://%s:%s/", *getQueueDomainName(), *getQueuePort())
 				request, request_error := http.NewRequest(http.MethodPost, queue_url, json_reader)
 
 				if request_error != nil {
 					w.Write([]byte(request_error.Error()))
 				} else {
 					request.Header.Set("Content-Type", "application/json")
-
-					client := http.Client{
-						Timeout: 120 * time.Second,
-					}
-
-					_, http_response_error := client.Do(request)
+					_, http_response_error := http_client.Do(request)
 					if http_response_error != nil {
 						w.Write([]byte(http_response_error.Error()))
 					} else {
