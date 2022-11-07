@@ -9,6 +9,8 @@ import (
 	"time"
 	"bytes"
 	"crypto/tls"
+	"sync"
+	"crypto/rand"
 	class "github.com/matehaxor03/holistic_db_client/class"
 )
 
@@ -18,6 +20,16 @@ type WebServer struct {
 
 func NewWebServer(port string, server_crt_path string, server_key_path string, queue_domain_name string, queue_port string) (*WebServer, []error) {
 	var errors []error
+	var messageCountLock sync.Mutex
+	var messageCount uint64
+
+
+	generate_guid := func() string {
+		byte_array := make([]byte, 16)
+		rand.Read(byte_array)
+		guid := fmt.Sprintf("%X-%X-%X-%X-%X", byte_array[0:4], byte_array[4:6], byte_array[6:8], byte_array[8:10], byte_array[10:])
+		return guid
+	}
 
 	transport_config := &http.Transport{
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
@@ -31,6 +43,13 @@ func NewWebServer(port string, server_crt_path string, server_key_path string, q
 	domain_name, domain_name_errors := class.NewDomainName(&queue_domain_name)
 	if domain_name_errors != nil {
 		errors = append(errors, domain_name_errors...)
+	}
+
+	incrementMessageCount := func() uint64 {
+		messageCountLock.Lock()
+		defer messageCountLock.Unlock()
+		messageCount++
+		return messageCount
 	}
 	//var this_holisic_queue_server *HolisticQueueServer
 
@@ -114,9 +133,8 @@ func NewWebServer(port string, server_crt_path string, server_key_path string, q
 				w.Write([]byte(body_payload_error.Error()))
 			} else {
 				json.Unmarshal([]byte(body_payload), &json_payload)
-				uuid, _ := ioutil.ReadFile("/proc/sys/kernel/random/uuid")
-				trace_id := fmt.Sprintf("%v%s", time.Now().UnixNano(), string(uuid))
-				json_payload.SetString("trace_id", &trace_id)
+				trace_id := fmt.Sprintf("%v-%s-%d", time.Now().UnixNano(), generate_guid(), incrementMessageCount())
+				json_payload.SetString("[trace_id]", &trace_id)
 
 				json_bytes := []byte(json_payload.ToJSONString())
 				json_reader := bytes.NewReader(json_bytes)

@@ -4,15 +4,22 @@
     <div>hello world</div>
 
     <script>
-        var url = 'https://127.0.0.1:5001/api';
-        var params = '{"param1":"value1","param2":"value2", "message_type":"get_tables"}';
+        var url = 'https://' + location.hostname + ':5001/api';
+        var params = '{"param1":"value1","param2":"value2", "[message_type]":"Get_Tables"}';
         var http = new XMLHttpRequest();
+
+        http.onreadystatechange = function() { 
+        if (http.readyState == 4 && http.status == 200)
+            console.log(http.responseText);
+        }
 
         http.open('POST', url, true);
 
         http.setRequestHeader('Content-Type', 'application/json');
 
-        http.send(JSON.stringify(params));
+        http.send(params);
+
+   
 
 
     </script>
