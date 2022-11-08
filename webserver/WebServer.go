@@ -152,11 +152,16 @@ func NewWebServer(port string, server_crt_path string, server_key_path string, q
 					w.Write([]byte(request_error.Error()))
 				} else {
 					request.Header.Set("Content-Type", "application/json")
-					_, http_response_error := http_client.Do(request)
+					http_response, http_response_error := http_client.Do(request)
 					if http_response_error != nil {
 						w.Write([]byte(http_response_error.Error()))
 					} else {
-						w.Write([]byte("ok"))
+						response_payload, response_payload_error := ioutil.ReadAll(http_response.Body);
+						if response_payload_error != nil {
+							w.Write([]byte(response_payload_error.Error()))
+						} else {
+							w.Write([]byte(response_payload))
+						}
 					}
 				}
 			}
