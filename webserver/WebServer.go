@@ -136,7 +136,14 @@ func NewWebServer(port string, server_crt_path string, server_key_path string, q
 				trace_id := fmt.Sprintf("%v-%s-%d", time.Now().UnixNano(), generate_guid(), incrementMessageCount())
 				json_payload.SetString("[trace_id]", &trace_id)
 
-				json_bytes := []byte(json_payload.ToJSONString())
+				json_payload_as_string, payload_as_string_errors := json_payload.ToJSONString()
+				if payload_as_string_errors != nil {
+					json_payload.SetErrors("[errors]", &payload_as_string_errors)
+					w.Write([]byte("error occured when converting to json string"))
+					return
+				}
+
+				json_bytes := []byte(*json_payload_as_string)
 				json_reader := bytes.NewReader(json_bytes)
 
 				request, request_error := http.NewRequest(http.MethodPost, queue_url, json_reader)
