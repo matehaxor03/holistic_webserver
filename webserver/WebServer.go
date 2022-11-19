@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strings"
 	"io/ioutil"
-	"encoding/json"
+	//"encoding/json"
 	"time"
 	"bytes"
 	"crypto/tls"
@@ -127,12 +127,18 @@ func NewWebServer(port string, server_crt_path string, server_key_path string, q
 
 	processRequest := func(w http.ResponseWriter, req *http.Request) {
 		if req.Method == "POST" || req.Method == "PATCH" || req.Method == "PUT" {
-			json_payload := class.Map{}
 			body_payload, body_payload_error := ioutil.ReadAll(req.Body);
 			if body_payload_error != nil {
 				w.Write([]byte(body_payload_error.Error()))
 			} else {
-				json.Unmarshal([]byte(body_payload), &json_payload)
+				json_payload, json_payload_errors := class.ParseJSON(string(body_payload))
+				if json_payload_errors != nil {
+					json_payload.SetErrors("[errors]", &json_payload_errors)
+					w.Write([]byte("error occured when converting to json string"))
+					return
+				}
+
+				//json.Unmarshal([]byte(body_payload), &json_payload)
 				trace_id := fmt.Sprintf("%v-%s-%d", time.Now().UnixNano(), generate_guid(), incrementMessageCount())
 				json_payload.SetString("[trace_id]", &trace_id)
 
