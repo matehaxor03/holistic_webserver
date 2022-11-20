@@ -18,10 +18,8 @@
   float: left;
 }
 
-.menu ul {
-  list-style-type: none;
-  margin: 0;
-  padding: 0;
+.left_menu {
+    width: 100%;
 }
 
 .button {
@@ -142,19 +140,18 @@
             leftHandNav = document.getElementById("menu");
             removeAllChildElements(leftHandNav);
 
-            const ul = document.createElement("ul");
+            //const ul = document.createElement("div");
             for(var i = 0; i < result["data"].length; i++) {
                 var unsafe_table_name = result["data"][i];
                 
-
-                const li = document.createElement("li");
-                li.setAttribute("onclick", "navigate_to_view_table(\"" + encodeURIComponent(unsafe_table_name.replace(/"/g, "\\\""))  + "\")");
-                li.setAttribute("class", "button");
+                const button = document.createElement("button");
+                button.setAttribute("onclick", "navigate_to_view_table(\"" + encodeURIComponent(unsafe_table_name.replace(/"/g, "\\\""))  + "\")");
+                button.setAttribute("class", "button left_menu");
                 const text = document.createTextNode(encodeURIComponent(unsafe_table_name));
-                li.appendChild(text);
-                ul.appendChild(li);
+                button.appendChild(text);
+                leftHandNav.appendChild(button);
             }
-            leftHandNav.appendChild(ul);
+            //leftHandNav.appendChild(ul);
         }
         send_http_request(params, callback_function);
     }
