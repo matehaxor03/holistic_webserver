@@ -14,11 +14,11 @@
 }
 
 [class*="col-"] {
-  padding: 5px;
+  padding: 1px;
   float: left;
 }
 
-.left_menu {
+.top_menu {
     width: 100%;
 }
 
@@ -72,12 +72,12 @@
 <body>
 
 <div class="row">
+  <h3 tabindex="0" id="menu_heading">Menu</h3>
   <div id="menu" class="menu">
     loading...
   </div>
 
-  <div id="main" class="col-7 col-s-7">
-  </div>
+  <div id="main" class="col-7 col-s-7"></div>
 
   <div id="extra_attributes" class="col-7 col-s-7">
   </div>
@@ -123,15 +123,28 @@
         }
         http.open('POST', url, true);
         http.setRequestHeader('Content-Type', 'application/json');
-        http.send(params);
+        http.send(JSON.stringify(params));
     }
 
     var navigate_to_view_table = function(table_name) {
-        console.log(table_name);
+        table_name = table_name.replace(/\\\"/g, "\"");
+        main_content = document.getElementById("main");
+        removeAllChildElements(main_content);
+
+        const title = document.createElement("h3");
+        title.setAttribute("tabindex", "-1");
+        title.setAttribute("id", "content_heading");
+        const title_text = document.createTextNode(table_name + " records");
+        title.appendChild(title_text);
+        main_content.appendChild(title);
+
+
+
+        document.getElementById("content_heading").focus()   
     }
 
     load_table_names = function() {
-        var params = '{"[queue]":"GetTableNames","[queue_mode]":"PushBack"}';
+        var params = {"[queue]":"GetTableNames","[queue_mode]":"PushBack"};
         var callback_function = function(result) {
             if(result["[errors]"].length > 0) {
                 return;
@@ -140,24 +153,24 @@
             leftHandNav = document.getElementById("menu");
             removeAllChildElements(leftHandNav);
 
-           
-            for(var i = 0; i < result["data"].length; i++) {
-                var unsafe_table_name = result["data"][i];
-                const span = document.createElement("span");
-                span.setAttribute("class", "col-3 col-s-3");
+            const span = document.createElement("span");
+            const length = result["data"].length
+            for(var i = 0; i < length; i++) {
+                var table_name = encodeURIComponent((result["data"][i]).replace(/"/g, "\\\""));
                 const button = document.createElement("button");
-                button.setAttribute("onclick", "navigate_to_view_table(\"" + encodeURIComponent(unsafe_table_name.replace(/"/g, "\\\""))  + "\")");
-                button.setAttribute("class", "button left_menu");
-                const text = document.createTextNode(encodeURIComponent(unsafe_table_name));
+                button.setAttribute("onclick", "navigate_to_view_table(\"" + table_name  + "\")");
+                button.setAttribute("class", "button top_menu col-3 col-s-3");
+                const text = document.createTextNode(table_name);
                 button.appendChild(text);
                 span.appendChild(button);
-                leftHandNav.appendChild(span);
             }
-            //leftHandNav.appendChild(ul);
+            leftHandNav.appendChild(span);
         }
         send_http_request(params, callback_function);
     }
 
+    document.getElementById("menu_heading").focus();
     load_table_names();
+
 
 </script>
