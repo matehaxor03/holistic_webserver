@@ -104,19 +104,37 @@
     var app = {};
     var services = {};
 
+    var removeAllChildElements = function(element) {
+        if(element == null) {
+            return;
+        }
+
+        while (element.firstChild) {
+            element.removeChild(element.lastChild);
+        }
+
+        return;
+    }
+
     var send_http_request = function(params, callback_function) {
         var http = new XMLHttpRequest();
         http.onreadystatechange = function() { 
             if (http.readyState == 4) {
+                var result = {};
                 try {
-                    var json_response = JSON.parse(http.responseText);
-                    json_response["[http_status]"] = http.status;
-                    callback_function(json_response);
-                } catch(ex) {
-                    var result = {};
-                    result["errors"] = [ex.toString()];
+                    result = JSON.parse(http.responseText);
                     result["[http_status]"] = http.status;
-                    callback_on_failure(result);
+                    callback_function(result);
+                    if(result["[errors]"].length > 0) {
+                        console.error(JSON.stringify(result));
+                    } else {
+                        console.log(JSON.stringify(result));
+                    }
+                } catch(ex) {
+                    result["[errors]"] = [ex.toString()];
+                    result["[http_status]"] = http.status;
+                    callback_function(result);
+                    console.error(JSON.stringify(result));
                 }
             }
         }
@@ -128,7 +146,21 @@
     services["GetTableNames"] = function() {
         var params = '{"[queue]":"GetTableNames","[queue_mode]":"PushBack"}';
         var callback_function = function(result) {
-            console.log(result);
+            if(result["[errors]"].length > 0) {
+                return;
+            }
+
+            leftHandNav = document.getElementById("menu");
+            removeAllChildElements(leftHandNav);
+
+            const ul = document.createElement("ul");
+            for(var i = 0; i < result["data"].length; i++) {
+                const li = document.createElement("li");
+                const text = document.createTextNode(encodeURIComponent(result["data"][i]));
+                li.appendChild(text);
+                ul.appendChild(li);
+            }
+            leftHandNav.appendChild(ul);
         }
         send_http_request(params, callback_function);
     }
