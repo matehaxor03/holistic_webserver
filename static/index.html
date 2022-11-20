@@ -18,32 +18,24 @@
   float: left;
 }
 
-.menu li {
-  padding: 5px;
-  margin-bottom: 5px;
-  background-color: #000000;
-  color: #ffffff;
-}
-
 .menu ul {
   list-style-type: none;
   margin: 0;
   padding: 0;
 }
 
-.menu li:hover {
-  background-color: #000000;
+.button {
+  padding: 5px;
+  margin-bottom: 5px;
+  color: black;
+  background-color: white;
+  border: 1px solid black;
 }
 
-.extra_details {
-  color: #ffffff;
-  text-align: center;
-  font-size: 10px;
-  background-color: #000000;
-  padding: 10px;
+.button:hover {
+    background-color: black;
+    color: #ffffff;
 }
-
-
 
 [class*="col-"] {
   width: 100%;
@@ -86,14 +78,12 @@
     loading...
   </div>
 
-  <div class="col-6 col-s-9">
+  <div id="main" class="col-6 col-s-9">
     some content
   </div>
 
-  <div class="col-3 col-s-12">
-    <div class="extra_details">
-      extra info
-    </div>
+  <div id="extra_attributes" class="col-3 col-s-12">
+    extra content
   </div>
 </div>
 
@@ -156,6 +146,7 @@
             const ul = document.createElement("ul");
             for(var i = 0; i < result["data"].length; i++) {
                 const li = document.createElement("li");
+                li.setAttribute("class", "button");
                 const text = document.createTextNode(encodeURIComponent(result["data"][i]));
                 li.appendChild(text);
                 ul.appendChild(li);
