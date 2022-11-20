@@ -1,27 +1,139 @@
+<!DOCTYPE html>
 <html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+* {
+  box-sizing: border-box;
+}
 
+.row::after {
+  content: "";
+  clear: both;
+  display: table;
+}
+
+[class*="col-"] {
+  padding: 10px;
+  float: left;
+}
+
+.menu li {
+  padding: 5px;
+  margin-bottom: 5px;
+  background-color: #000000;
+  color: #ffffff;
+}
+
+.menu ul {
+  list-style-type: none;
+  margin: 0;
+  padding: 0;
+}
+
+.menu li:hover {
+  background-color: #000000;
+}
+
+.extra_details {
+  color: #ffffff;
+  text-align: center;
+  font-size: 10px;
+  background-color: #000000;
+  padding: 10px;
+}
+
+
+
+[class*="col-"] {
+  width: 100%;
+}
+
+@media only screen and (min-width: 600px) {
+  .col-s-1 {width: 8.33%;}
+  .col-s-2 {width: 16.66%;}
+  .col-s-3 {width: 25%;}
+  .col-s-4 {width: 33.33%;}
+  .col-s-5 {width: 41.66%;}
+  .col-s-6 {width: 50%;}
+  .col-s-7 {width: 58.33%;}
+  .col-s-8 {width: 66.66%;}
+  .col-s-9 {width: 75%;}
+  .col-s-10 {width: 83.33%;}
+  .col-s-11 {width: 91.66%;}
+  .col-s-12 {width: 100%;}
+}
+@media only screen and (min-width: 768px) {
+  .col-1 {width: 8.33%;}
+  .col-2 {width: 16.66%;}
+  .col-3 {width: 25%;}
+  .col-4 {width: 33.33%;}
+  .col-5 {width: 41.66%;}
+  .col-6 {width: 50%;}
+  .col-7 {width: 58.33%;}
+  .col-8 {width: 66.66%;}
+  .col-9 {width: 75%;}
+  .col-10 {width: 83.33%;}
+  .col-11 {width: 91.66%;}
+  .col-12 {width: 100%;}
+}
+</style>
+</head>
 <body>
-    <div>hello world</div>
 
-    <script>
-        var url = 'https://' + location.hostname + ':5001/api';
-        var params = '{"param1":"value1","param2":"value2", "[queue]":"GetTableNames", "[queue_mode]":"PushBack"}';
-        var http = new XMLHttpRequest();
+<div class="row">
+  <div id="menu" class="col-3 col-s-3 menu">
+    loading...
+  </div>
 
-        http.onreadystatechange = function() { 
-        if (http.readyState == 4 && http.status == 200)
-            console.log(http.responseText);
-        }
+  <div class="col-6 col-s-9">
+    some content
+  </div>
 
-        http.open('POST', url, true);
+  <div class="col-3 col-s-12">
+    <div class="extra_details">
+      extra info
+    </div>
+  </div>
+</div>
 
-        http.setRequestHeader('Content-Type', 'application/json');
-
-        http.send(params);
-
-   
-
-
-    </script>
 </body>
-</html>
+
+<script>
+    var url = 'https://' + location.hostname + ':5001/api';
+    var app = {};
+    var services = {};
+
+    var send_http_request = function(params, callback_function) {
+        var http = new XMLHttpRequest();
+        http.onreadystatechange = function() { 
+            if (http.readyState == 4) {
+                try {
+                    var json_response = JSON.parse(http.responseText);
+                    json_response["[http_status]"] = http.status;
+                    callback_function(json_response);
+                } catch(ex) {
+                    var result = {};
+                    result["errors"] = [ex.toString()];
+                    result["[http_status]"] = http.status;
+                    callback_on_failure(result);
+                }
+            }
+        }
+        http.open('POST', url, true);
+        http.setRequestHeader('Content-Type', 'application/json');
+        http.send(params);
+    }
+
+    services["GetTableNames"] = function() {
+        var params = '{"[queue]":"GetTableNames","[queue_mode]":"PushBack"}';
+        var callback_function = function(result) {
+            console.log(result);
+        }
+        send_http_request(params, callback_function);
+    }
+
+    app["services"] = services;
+    services["GetTableNames"]();
+
+</script>
