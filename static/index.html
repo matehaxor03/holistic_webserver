@@ -72,7 +72,7 @@
 <body>
 
 <div class="row">
-  <h3 tabindex="0" id="menu_heading">Menu</h3>
+  <h1 tabindex="0" id="menu_heading">Menu</h3>
   <div id="menu" class="menu">
     loading...
   </div>
@@ -131,16 +131,25 @@
         main_content = document.getElementById("main");
         removeAllChildElements(main_content);
 
-        const title = document.createElement("h3");
-        title.setAttribute("tabindex", "-1");
+        const title = document.createElement("h2");
+        title.setAttribute("tabindex", "0");
         title.setAttribute("id", "content_heading");
-        const title_text = document.createTextNode(table_name + " records");
+        const title_text = document.createTextNode(encodeURIComponent(table_name) + " records");
         title.appendChild(title_text);
         main_content.appendChild(title);
+        document.getElementById("content_heading").focus();
 
+        var params = {"[queue_mode]":"PushBack"};
+        params["[queue]"] = "Read_" + decodeURIComponent(table_name);
 
+        var callback_function = function(result) {
+            if(result["[errors]"].length > 0) {
+                return;
+            }
 
-        document.getElementById("content_heading").focus()   
+            console.log(JSON.stringify(["data"]));
+        }
+        send_http_request(params, callback_function);
     }
 
     load_table_names = function() {
