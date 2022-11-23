@@ -140,7 +140,7 @@
         document.getElementById("content_heading").focus();
 
         var params = {"[queue_mode]":"PushBack"};
-        params["[queue]"] = "Read_" + decodeURIComponent(table_name);
+        params["[queue]"] = "GetSchema_" + decodeURIComponent(table_name);
 
         var callback_function = function(result) {
             if(result["[errors]"].length > 0) {
