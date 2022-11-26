@@ -20,7 +20,7 @@ type WebServer struct {
 
 func NewWebServer(port string, server_crt_path string, server_key_path string, queue_domain_name string, queue_port string) (*WebServer, []error) {
 	var errors []error
-	var messageCountLock sync.Mutex
+	var trace_id_lock sync.Mutex
 	var messageCount uint64
 
 
@@ -46,10 +46,15 @@ func NewWebServer(port string, server_crt_path string, server_key_path string, q
 	}
 
 	incrementMessageCount := func() uint64 {
-		messageCountLock.Lock()
-		defer messageCountLock.Unlock()
 		messageCount++
 		return messageCount
+	}
+
+	get_trace_id := func() string {
+		trace_id_lock.Lock()
+		defer trace_id_lock.Unlock()
+		trace_id := fmt.Sprintf("%v-%s-%d", time.Now().UnixNano(), generate_guid(), incrementMessageCount())
+		return trace_id
 	}
 	//var this_holisic_queue_server *HolisticQueueServer
 
@@ -103,6 +108,7 @@ func NewWebServer(port string, server_crt_path string, server_key_path string, q
 		return this_holisic_queue_server
 	}*/
 
+	/*
 	formatRequest := func(r *http.Request) string {
 		var request []string
 	
@@ -123,57 +129,119 @@ func NewWebServer(port string, server_crt_path string, server_key_path string, q
 		}
 	
 		return strings.Join(request, "\n")
+	}*/
+
+	write_response := func(w http.ResponseWriter, result class.Map, write_response_errors []error) {
+		if len(write_response_errors) > 0 {
+			result.SetNil("data")
+			result.SetErrors("[errors]", &write_response_errors)
+		}
+
+		result_as_string, result_as_string_errors := result.ToJSONString()
+		if result_as_string_errors != nil {
+			write_response_errors = append(write_response_errors, result_as_string_errors...)
+		}
+		
+		if result_as_string_errors == nil {
+			w.Write([]byte(*result_as_string))
+		} else {
+			w.Write([]byte(fmt.Sprintf("{\"[errors]\":\"%s\", \"data\":null}", strings.ReplaceAll(fmt.Sprintf("%s", result_as_string_errors), "\"", "\\\""))))
+		}
 	}
 
 	processRequest := func(w http.ResponseWriter, req *http.Request) {
-		if req.Method == "POST" || req.Method == "PATCH" || req.Method == "PUT" {
-			body_payload, body_payload_error := ioutil.ReadAll(req.Body);
-			if body_payload_error != nil {
-				w.Write([]byte(body_payload_error.Error()))
-			} else {
-				json_payload, json_payload_errors := class.ParseJSON(string(body_payload))
-				if json_payload_errors != nil {
-					json_payload.SetErrors("[errors]", &json_payload_errors)
-					w.Write([]byte("error occured when converting to json string"))
-					return
-				}
-
-				//json.Unmarshal([]byte(body_payload), &json_payload)
-				trace_id := fmt.Sprintf("%v-%s-%d", time.Now().UnixNano(), generate_guid(), incrementMessageCount())
-				json_payload.SetString("[trace_id]", &trace_id)
-
-				json_payload_as_string, payload_as_string_errors := json_payload.ToJSONString()
-				if payload_as_string_errors != nil {
-					json_payload.SetErrors("[errors]", &payload_as_string_errors)
-					w.Write([]byte("error occured when converting to json string"))
-					return
-				}
-
-				json_bytes := []byte(*json_payload_as_string)
-				json_reader := bytes.NewReader(json_bytes)
-
-				request, request_error := http.NewRequest(http.MethodPost, queue_url, json_reader)
-
-				if request_error != nil {
-					w.Write([]byte(request_error.Error()))
-				} else {
-					request.Header.Set("Content-Type", "application/json")
-					http_response, http_response_error := http_client.Do(request)
-					if http_response_error != nil {
-						w.Write([]byte(http_response_error.Error()))
-					} else {
-						response_payload, response_payload_error := ioutil.ReadAll(http_response.Body);
-						if response_payload_error != nil {
-							w.Write([]byte(response_payload_error.Error()))
-						} else {
-							w.Write([]byte(response_payload))
-						}
-					}
-				}
-			}
-		} else {
-			w.Write([]byte(formatRequest(req)))
+		var process_request_errors []error
+		result := class.Map{}
+		if !(req.Method == "POST" || req.Method == "PATCH" || req.Method == "PUT") {
+			process_request_errors = append(process_request_errors, fmt.Errorf("http request method not supported: %s", req.Method))
 		}
+
+		if len(process_request_errors) > 0 {
+			write_response(w, result, process_request_errors)
+			return
+		}
+
+		body_payload, body_payload_error := ioutil.ReadAll(req.Body);
+		if body_payload_error != nil {
+			process_request_errors = append(process_request_errors, body_payload_error)
+		}
+
+		if body_payload == nil {
+			process_request_errors = append(process_request_errors, fmt.Errorf("body payload is nil"))
+		}
+
+		if len(process_request_errors) > 0 {
+			write_response(w, result, process_request_errors)
+			return
+		}
+
+		json_payload, json_payload_errors := class.ParseJSON(string(body_payload))
+
+		if json_payload_errors != nil {
+			process_request_errors = append(process_request_errors, json_payload_errors...)
+		}
+
+		if json_payload == nil {
+			process_request_errors = append(process_request_errors, fmt.Errorf("json is nil"))
+		}
+
+		if len(process_request_errors) > 0 {
+			write_response(w, result, process_request_errors)
+			return
+		}
+
+		trace_id := get_trace_id()
+		json_payload.SetString("[trace_id]", &trace_id)
+
+		json_payload_as_string, payload_as_string_errors := json_payload.ToJSONString()
+		if payload_as_string_errors != nil {
+			process_request_errors = append(process_request_errors, payload_as_string_errors...)
+		}
+
+		if json_payload_as_string == nil {
+			process_request_errors = append(process_request_errors, fmt.Errorf("json tostring is nil"))
+		}
+
+		if len(process_request_errors) > 0 {
+			write_response(w, result, process_request_errors)
+			return
+		}
+
+		json_bytes := []byte(*json_payload_as_string)
+		json_reader := bytes.NewReader(json_bytes)
+
+		request, request_error := http.NewRequest(http.MethodPost, queue_url, json_reader)
+		if request_error != nil {
+			process_request_errors = append(process_request_errors, request_error)
+		}
+
+		if len(process_request_errors) > 0 {
+			write_response(w, result, process_request_errors)
+			return
+		}
+
+		request.Header.Set("Content-Type", "application/json")
+		http_response, http_response_error := http_client.Do(request)
+		if http_response_error != nil {
+			process_request_errors = append(process_request_errors, http_response_error)
+		} 
+
+		if len(process_request_errors) > 0 {
+			write_response(w, result, process_request_errors)
+			return
+		}
+
+		response_payload, response_payload_error := ioutil.ReadAll(http_response.Body);
+		if response_payload_error != nil {
+			process_request_errors = append(process_request_errors, response_payload_error)
+		}
+
+		if len(process_request_errors) > 0 {
+			write_response(w, result, process_request_errors)
+			return
+		}
+
+		w.Write([]byte(response_payload))
 	}
 
 	x := WebServer{
