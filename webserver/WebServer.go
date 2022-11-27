@@ -60,11 +60,15 @@ func NewWebServer(port string, server_crt_path string, server_key_path string, q
 
 	//todo: add filters to fields
 	data := class.Map{
-		"[port]": class.Map{"value": class.CloneString(&port), "mandatory": true},
-		"[server_crt_path]": class.Map{"value": class.CloneString(&server_crt_path), "mandatory": true},
-		"[server_key_path]": class.Map{"value": class.CloneString(&server_key_path), "mandatory": true},
-		"[queue_port]": class.Map{"value": class.CloneString(&queue_port), "mandatory": true},
-		"[queue_domain_name]": class.Map{"value": class.CloneDomainName(domain_name), "mandatory": true},
+		"[port]": class.Map{"value": &port, "mandatory": true},
+		"[server_crt_path]": class.Map{"value": &server_crt_path, "mandatory": true},
+		"[server_key_path]": class.Map{"value": &server_key_path, "mandatory": true},
+		"[queue_port]": class.Map{"value": &queue_port, "mandatory": true},
+		"[queue_domain_name]": class.Map{"value": domain_name, "mandatory": true},
+	}
+
+	getData := func() *class.Map {
+		return &data
 	}
 
 	getPort := func() (string, []error) {
@@ -127,7 +131,7 @@ func NewWebServer(port string, server_crt_path string, server_key_path string, q
 		}
 
 		temp_queue_domain_name_obj := temp_queue_domain_name.GetObject("value").(*class.DomainName)
-		return class.CloneDomainName(temp_queue_domain_name_obj), nil
+		return temp_queue_domain_name_obj, nil
 	}
 
 	queue_domain_name_object, queue_domain_name_object_errors := getQueueDomainName()
@@ -148,7 +152,7 @@ func NewWebServer(port string, server_crt_path string, server_key_path string, q
 	queue_url := fmt.Sprintf("https://%s:%s/", queue_domain_name_object_value, queue_port_value)
 
 	validate := func() []error {
-		return class.ValidateData(data, "WebServer")
+		return class.ValidateData(getData(), "WebServer")
 	}
 
 	/*
