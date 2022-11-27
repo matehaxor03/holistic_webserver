@@ -40,7 +40,7 @@ func NewWebServer(port string, server_crt_path string, server_key_path string, q
 		Transport: transport_config,
 	}
 
-	domain_name, domain_name_errors := class.NewDomainName(&queue_domain_name)
+	domain_name, domain_name_errors := class.NewDomainName(queue_domain_name)
 	if domain_name_errors != nil {
 		errors = append(errors, domain_name_errors...)
 	}
@@ -67,32 +67,85 @@ func NewWebServer(port string, server_crt_path string, server_key_path string, q
 		"[queue_domain_name]": class.Map{"value": class.CloneDomainName(domain_name), "mandatory": true},
 	}
 
-	getPort := func() *string {
-		port, _ := data.M("[port]").GetString("value")
-		return class.CloneString(port)
+	getPort := func() (string, []error) {
+		temp_port_map, temp_port_map_errors := data.GetMap("[port]")
+		if temp_port_map_errors != nil {
+			return "", temp_port_map_errors
+		}
+
+		temp_port, temp_port_errors := temp_port_map.GetString("value")
+		if temp_port_errors != nil {
+			return "", temp_port_errors
+		}
+		return *temp_port, nil
 	}
 
-	getServerCrtPath := func() *string {
-		crt, _ := data.M("[server_crt_path]").GetString("value")
-		return class.CloneString(crt)
+	getServerCrtPath := func() (string, []error) {
+		x_map, x_map_errors := data.GetMap("[server_crt_path]")
+		if x_map_errors != nil {
+			return "", x_map_errors
+		}
+
+		temp_x, temp_x_errors := x_map.GetString("value")
+		if temp_x_errors != nil {
+			return "", temp_x_errors
+		}
+		return *temp_x, nil
 	}
 
-	getServerKeyPath := func() *string {
-		key, _ := data.M("[server_key_path]").GetString("value")
-		return class.CloneString(key)
+	getServerKeyPath := func() (string, []error) {
+		x_map, x_map_errors := data.GetMap("[server_key_path]")
+		if x_map_errors != nil {
+			return "", x_map_errors
+		}
+
+		temp_x, temp_x_errors := x_map.GetString("value")
+		if temp_x_errors != nil {
+			return "", temp_x_errors
+		}
+		return *temp_x, nil
 	}
 
 	
-	getQueuePort := func() *string {
-		port, _ := data.M("[queue_port]").GetString("value")
-		return class.CloneString(port)
+	getQueuePort := func() (string, []error) {
+		temp_port_map, temp_port_map_errors := data.GetMap("[queue_port]")
+		if temp_port_map_errors != nil {
+			return "", temp_port_map_errors
+		}
+
+		temp_port, temp_port_errors := temp_port_map.GetString("value")
+		if temp_port_errors != nil {
+			return "", temp_port_errors
+		}
+		return *temp_port, nil
 	}
 
-	getQueueDomainName := func() *class.DomainName {
-		return class.CloneDomainName(data.M("[queue_domain_name]").GetObject("value").(*class.DomainName))
+	getQueueDomainName := func() (*class.DomainName, []error) {
+		temp_queue_domain_name, temp_queue_domain_name_errors := data.GetMap("[queue_domain_name]")
+		if temp_queue_domain_name_errors != nil {
+			return nil, temp_queue_domain_name_errors
+		}
+
+		temp_queue_domain_name_obj := temp_queue_domain_name.GetObject("value").(*class.DomainName)
+		return class.CloneDomainName(temp_queue_domain_name_obj), nil
 	}
 
-	queue_url := fmt.Sprintf("https://%s:%s/", *(getQueueDomainName().GetDomainName()), *getQueuePort())
+	queue_domain_name_object, queue_domain_name_object_errors := getQueueDomainName()
+	if queue_domain_name_object_errors != nil {
+		return nil, queue_domain_name_object_errors
+	}
+
+	queue_domain_name_object_value, queue_domain_name_object_value_errors := queue_domain_name_object.GetDomainName()
+	if queue_domain_name_object_value_errors != nil {
+		return nil, queue_domain_name_object_value_errors
+	}
+
+	queue_port_value, queue_port_value_errors := getQueuePort()
+	if queue_port_value_errors != nil {
+		return nil, queue_port_value_errors
+	}
+
+	queue_url := fmt.Sprintf("https://%s:%s/", queue_domain_name_object_value, queue_port_value)
 
 	validate := func() []error {
 		return class.ValidateData(data, "WebServer")
@@ -253,7 +306,22 @@ func NewWebServer(port string, server_crt_path string, server_key_path string, q
 
 			http.HandleFunc("/api", processRequest)
 
-			err := http.ListenAndServeTLS(":" + *(getPort()), *(getServerCrtPath()), *(getServerKeyPath()), nil)
+			temp_port, temp_port_errors := getPort()
+			if temp_port_errors != nil {
+				return temp_port_errors
+			}
+
+			temp_server_crt_path, temp_server_crt_path_errors := getServerCrtPath()
+			if temp_server_crt_path_errors != nil {
+				return temp_server_crt_path_errors
+			}
+
+			temp_server_key_path, temp_server_key_path_errors := getServerKeyPath()
+			if temp_server_key_path_errors != nil {
+				return temp_server_key_path_errors
+			}
+
+			err := http.ListenAndServeTLS(":" + temp_port, temp_server_crt_path, temp_server_key_path, nil)
 			if err != nil {
 				errors = append(errors, err)
 			}
