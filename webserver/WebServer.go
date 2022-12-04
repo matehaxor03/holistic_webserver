@@ -19,6 +19,7 @@ type WebServer struct {
 }
 
 func NewWebServer(port string, server_crt_path string, server_key_path string, queue_domain_name string, queue_port string) (*WebServer, []error) {
+	struct_type := "*webserver.WebServer"
 	var errors []error
 	var trace_id_lock sync.Mutex
 	var messageCount uint64
@@ -60,11 +61,22 @@ func NewWebServer(port string, server_crt_path string, server_key_path string, q
 
 	//todo: add filters to fields
 	data := class.Map{
-		"[port]": class.Map{"value": &port, "mandatory": true},
-		"[server_crt_path]": class.Map{"value": &server_crt_path, "mandatory": true},
-		"[server_key_path]": class.Map{"value": &server_key_path, "mandatory": true},
-		"[queue_port]": class.Map{"value": &queue_port, "mandatory": true},
-		"[queue_domain_name]": class.Map{"value": domain_name, "mandatory": true},
+		"[fields]": class.Map{},
+		"[schema]": class.Map{},
+		"[system_fields]": class.Map{
+			"[port]":&port,
+			"[server_crt_path]":&server_crt_path,
+			"[server_key_path]":&server_key_path,
+			"[queue_port]":&queue_port,
+			"[queue_domain_name]":domain_name,	
+		},
+		"[system_schema]":class.Map{
+			"[port]": class.Map{"type":"string","mandatory": true},
+			"[server_crt_path]": class.Map{"type":"string","mandatory": true},
+			"[server_key_path]": class.Map{"type":"string", "mandatory": true},
+			"[queue_port]": class.Map{"type":"string", "mandatory": true},
+			"[queue_domain_name]": class.Map{"type":"*class.DomainName", "mandatory": true},
+		},
 	}
 
 	getData := func() *class.Map {
@@ -72,66 +84,43 @@ func NewWebServer(port string, server_crt_path string, server_key_path string, q
 	}
 
 	getPort := func() (string, []error) {
-		temp_port_map, temp_port_map_errors := data.GetMap("[port]")
-		if temp_port_map_errors != nil {
-			return "", temp_port_map_errors
+		temp_value, temp_value_errors := class.GetField(struct_type, getData(), "[system_schema]", "[system_fields]", "[port]", "string")
+		if temp_value_errors != nil {
+			return "",temp_value_errors
 		}
-
-		temp_port, temp_port_errors := temp_port_map.GetString("value")
-		if temp_port_errors != nil {
-			return "", temp_port_errors
-		}
-		return *temp_port, nil
+		return temp_value.(string), nil
 	}
 
 	getServerCrtPath := func() (string, []error) {
-		x_map, x_map_errors := data.GetMap("[server_crt_path]")
-		if x_map_errors != nil {
-			return "", x_map_errors
+		temp_value, temp_value_errors := class.GetField(struct_type, getData(), "[system_schema]", "[system_fields]", "[server_crt_path]", "string")
+		if temp_value_errors != nil {
+			return "",temp_value_errors
 		}
-
-		temp_x, temp_x_errors := x_map.GetString("value")
-		if temp_x_errors != nil {
-			return "", temp_x_errors
-		}
-		return *temp_x, nil
+		return temp_value.(string), nil
 	}
 
 	getServerKeyPath := func() (string, []error) {
-		x_map, x_map_errors := data.GetMap("[server_key_path]")
-		if x_map_errors != nil {
-			return "", x_map_errors
+		temp_value, temp_value_errors := class.GetField(struct_type, getData(), "[system_schema]", "[system_fields]", "[server_key_path]", "string")
+		if temp_value_errors != nil {
+			return "",temp_value_errors
 		}
-
-		temp_x, temp_x_errors := x_map.GetString("value")
-		if temp_x_errors != nil {
-			return "", temp_x_errors
-		}
-		return *temp_x, nil
+		return temp_value.(string), nil
 	}
 
-	
 	getQueuePort := func() (string, []error) {
-		temp_port_map, temp_port_map_errors := data.GetMap("[queue_port]")
-		if temp_port_map_errors != nil {
-			return "", temp_port_map_errors
+		temp_value, temp_value_errors := class.GetField(struct_type, getData(), "[system_schema]", "[system_fields]", "[queue_port]", "string")
+		if temp_value_errors != nil {
+			return "", temp_value_errors
 		}
-
-		temp_port, temp_port_errors := temp_port_map.GetString("value")
-		if temp_port_errors != nil {
-			return "", temp_port_errors
-		}
-		return *temp_port, nil
+		return temp_value.(string), nil
 	}
 
 	getQueueDomainName := func() (*class.DomainName, []error) {
-		temp_queue_domain_name, temp_queue_domain_name_errors := data.GetMap("[queue_domain_name]")
-		if temp_queue_domain_name_errors != nil {
-			return nil, temp_queue_domain_name_errors
+		temp_value, temp_value_errors := class.GetField(struct_type, getData(), "[system_schema]", "[system_fields]", "[queue_domain_name]", "*class.DomainName")
+		if temp_value_errors != nil {
+			return nil,temp_value_errors
 		}
-
-		temp_queue_domain_name_obj := temp_queue_domain_name.GetObject("value").(*class.DomainName)
-		return temp_queue_domain_name_obj, nil
+		return temp_value.(*class.DomainName), nil
 	}
 
 	queue_domain_name_object, queue_domain_name_object_errors := getQueueDomainName()
@@ -152,7 +141,7 @@ func NewWebServer(port string, server_crt_path string, server_key_path string, q
 	queue_url := fmt.Sprintf("https://%s:%s/", queue_domain_name_object_value, queue_port_value)
 
 	validate := func() []error {
-		return class.ValidateData(getData(), "WebServer")
+		return class.ValidateData(getData(), struct_type)
 	}
 
 	/*
