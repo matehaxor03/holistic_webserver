@@ -183,13 +183,14 @@ func NewWebServer(port string, server_crt_path string, server_key_path string, q
 			result.SetErrors("[errors]", &write_response_errors)
 		}
 
-		result_as_string, result_as_string_errors := result.ToJSONString()
+		var json_payload_builder strings.Builder
+		result_as_string_errors := result.ToJSONString(&json_payload_builder)
 		if result_as_string_errors != nil {
 			write_response_errors = append(write_response_errors, result_as_string_errors...)
 		}
 		
 		if result_as_string_errors == nil {
-			w.Write([]byte(*result_as_string))
+			w.Write([]byte(json_payload_builder.String()))
 		} else {
 			w.Write([]byte(fmt.Sprintf("{\"[errors]\":\"%s\", \"data\":null}", strings.ReplaceAll(fmt.Sprintf("%s", result_as_string_errors), "\"", "\\\""))))
 		}
@@ -239,13 +240,10 @@ func NewWebServer(port string, server_crt_path string, server_key_path string, q
 		trace_id := get_trace_id()
 		json_payload.SetString("[trace_id]", &trace_id)
 
-		json_payload_as_string, payload_as_string_errors := json_payload.ToJSONString()
+		var json_payload_builder strings.Builder
+		payload_as_string_errors := json_payload.ToJSONString(&json_payload_builder)
 		if payload_as_string_errors != nil {
 			process_request_errors = append(process_request_errors, payload_as_string_errors...)
-		}
-
-		if json_payload_as_string == nil {
-			process_request_errors = append(process_request_errors, fmt.Errorf("json tostring is nil"))
 		}
 
 		if len(process_request_errors) > 0 {
@@ -253,7 +251,7 @@ func NewWebServer(port string, server_crt_path string, server_key_path string, q
 			return
 		}
 
-		json_bytes := []byte(*json_payload_as_string)
+		json_bytes := []byte(json_payload_builder.String())
 		json_reader := bytes.NewReader(json_bytes)
 
 		request, request_error := http.NewRequest(http.MethodPost, queue_url, json_reader)
