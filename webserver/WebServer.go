@@ -12,6 +12,7 @@ import (
 	"sync"
 	"crypto/rand"
 	class "github.com/matehaxor03/holistic_db_client/class"
+	json "github.com/matehaxor03/holistic_json/json"
 )
 
 type WebServer struct {
@@ -60,26 +61,26 @@ func NewWebServer(port string, server_crt_path string, server_key_path string, q
 	//var this_holisic_queue_server *HolisticQueueServer
 
 	//todo: add filters to fields
-	data := class.Map{
-		"[fields]": class.Map{},
-		"[schema]": class.Map{},
-		"[system_fields]": class.Map{
+	data := json.Map{
+		"[fields]": json.Map{},
+		"[schema]": json.Map{},
+		"[system_fields]": json.Map{
 			"[port]":&port,
 			"[server_crt_path]":&server_crt_path,
 			"[server_key_path]":&server_key_path,
 			"[queue_port]":&queue_port,
 			"[queue_domain_name]":domain_name,	
 		},
-		"[system_schema]":class.Map{
-			"[port]": class.Map{"type":"string","mandatory": true},
-			"[server_crt_path]": class.Map{"type":"string","mandatory": true},
-			"[server_key_path]": class.Map{"type":"string", "mandatory": true},
-			"[queue_port]": class.Map{"type":"string", "mandatory": true},
-			"[queue_domain_name]": class.Map{"type":"*class.DomainName", "mandatory": true},
+		"[system_schema]":json.Map{
+			"[port]": json.Map{"type":"string"},
+			"[server_crt_path]": json.Map{"type":"string"},
+			"[server_key_path]": json.Map{"type":"string"},
+			"[queue_port]": json.Map{"type":"string"},
+			"[queue_domain_name]": json.Map{"type":"class.DomainName"},
 		},
 	}
 
-	getData := func() *class.Map {
+	getData := func() *json.Map {
 		return &data
 	}
 
@@ -119,6 +120,8 @@ func NewWebServer(port string, server_crt_path string, server_key_path string, q
 		temp_value, temp_value_errors := class.GetField(struct_type, getData(), "[system_schema]", "[system_fields]", "[queue_domain_name]", "*class.DomainName")
 		if temp_value_errors != nil {
 			return nil,temp_value_errors
+		} else if temp_value == nil {
+			return nil, nil
 		}
 		return temp_value.(*class.DomainName), nil
 	}
@@ -177,7 +180,7 @@ func NewWebServer(port string, server_crt_path string, server_key_path string, q
 		return strings.Join(request, "\n")
 	}*/
 
-	write_response := func(w http.ResponseWriter, result class.Map, write_response_errors []error) {
+	write_response := func(w http.ResponseWriter, result json.Map, write_response_errors []error) {
 		if len(write_response_errors) > 0 {
 			result.SetNil("data")
 			result.SetErrors("[errors]", &write_response_errors)
@@ -198,7 +201,7 @@ func NewWebServer(port string, server_crt_path string, server_key_path string, q
 
 	processRequest := func(w http.ResponseWriter, req *http.Request) {
 		var process_request_errors []error
-		result := class.Map{}
+		result := json.Map{}
 		if !(req.Method == "POST" || req.Method == "PATCH" || req.Method == "PUT") {
 			process_request_errors = append(process_request_errors, fmt.Errorf("http request method not supported: %s", req.Method))
 		}
@@ -222,7 +225,7 @@ func NewWebServer(port string, server_crt_path string, server_key_path string, q
 			return
 		}
 
-		json_payload, json_payload_errors := class.ParseJSON(string(body_payload))
+		json_payload, json_payload_errors := json.ParseJSON(string(body_payload))
 
 		if json_payload_errors != nil {
 			process_request_errors = append(process_request_errors, json_payload_errors...)
