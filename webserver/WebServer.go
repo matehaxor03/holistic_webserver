@@ -243,13 +243,13 @@ func NewWebServer(port string, server_crt_path string, server_key_path string, q
 		trace_id := get_trace_id()
 		keys := json_payload.Keys()
 		if len(keys) != 1 {
-			errors = append(errors, fmt.Errorf("root attributes had more than 1"))
+			process_request_errors = append(process_request_errors, fmt.Errorf("root attributes had more than 1"))
 		} else {
 			json_payload_inner, json_payload_inner_errors := json_payload.GetMap(keys[0])
 			if json_payload_inner_errors != nil {
-				errors = append(errors, json_payload_inner_errors...)
+				process_request_errors = append(process_request_errors, json_payload_inner_errors...)
 			} else if json_payload_inner == nil {
-				errors = append(errors, fmt.Errorf("json payload is nil"))
+				process_request_errors = append(process_request_errors, fmt.Errorf("json payload is nil"))
 			} else {
 				json_payload_inner.SetString("[trace_id]", &trace_id)
 			}
