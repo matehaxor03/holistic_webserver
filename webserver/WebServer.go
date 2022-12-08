@@ -241,7 +241,19 @@ func NewWebServer(port string, server_crt_path string, server_key_path string, q
 		}
 
 		trace_id := get_trace_id()
-		json_payload.SetString("[trace_id]", &trace_id)
+		keys := json_payload.Keys()
+		if len(keys) != 1 {
+			errors = append(errors, fmt.Errorf("root attributes had more than 1"))
+		} else {
+			json_payload_inner, json_payload_inner_errors := json_payload.GetMap(keys[0])
+			if json_payload_inner_errors != nil {
+				errors = append(errors, json_payload_inner_errors...)
+			} else if json_payload_inner == nil {
+				errors = append(errors, fmt.Errorf("json payload is nil"))
+			} else {
+				json_payload_inner.SetString("[trace_id]", &trace_id)
+			}
+		}
 
 		var json_payload_builder strings.Builder
 		payload_as_string_errors := json_payload.ToJSONString(&json_payload_builder)
