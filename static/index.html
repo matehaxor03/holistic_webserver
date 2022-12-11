@@ -106,16 +106,16 @@
                 var result = {};
                 try {
                     result = JSON.parse(http.responseText);
-                    result["[http_status]"] = http.status;
+                    result[Object.keys(result)[0]]["[http_status]"] = http.status;
                     callback_function(result);
-                    if(result["[errors]"].length > 0) {
+                    if(result[Object.keys(result)[0]]["[errors]"].length > 0) {
                         console.error(JSON.stringify(result));
                     } else {
                         console.log(JSON.stringify(result));
                     }
                 } catch(ex) {
-                    result["[errors]"] = [ex.toString()];
-                    result["[http_status]"] = http.status;
+                    result["unknown"]["[errors]"] = [ex.toString()];
+                    result["unknown"]["[http_status]"] = http.status;
                     callback_function(result);
                     console.error(JSON.stringify(result));
                 }
@@ -139,16 +139,17 @@
         main_content.appendChild(title);
         document.getElementById("content_heading").focus();
 
-        var message_type = "GetSchema_" + decodeURIComponent(table_name);
+        var temp_message_type = "GetSchema_" + decodeURIComponent(table_name);
         var params = {};
-        params[message_type] = {};
+        params[temp_message_type] = {};
 
         var callback_function = function(result) {
-            if(result["[errors]"].length > 0) {
+            var message_type = Object.keys(result)[0]
+            if(result[message_type]["[errors]"].length > 0) {
                 return;
             }
 
-            console.log(JSON.stringify(["data"]));
+            console.log(result);
         }
         send_http_request(params, callback_function);
     }
@@ -156,7 +157,8 @@
     load_table_names = function() {
         var params = {"GetTableNames":{}};
         var callback_function = function(result) {
-            if(result["GetTableNames"]["[errors]"].length > 0) {
+            var message_type = Object.keys(result)[0]
+            if(result[message_type]["[errors]"].length > 0) {
                 return;
             }
 
@@ -164,9 +166,9 @@
             removeAllChildElements(leftHandNav);
 
             const span = document.createElement("span");
-            const length = result["GetTableNames"]["data"].length
+            const length = result[message_type]["data"].length
             for(var i = 0; i < length; i++) {
-                var table_name = encodeURIComponent((result["GetTableNames"]["data"][i]).replace(/"/g, "\\\""));
+                var table_name = encodeURIComponent((result[message_type]["data"][i]).replace(/"/g, "\\\""));
                 const button = document.createElement("button");
                 button.setAttribute("onclick", "navigate_to_view_table(\"" + table_name  + "\")");
                 button.setAttribute("class", "button top_menu col-3 col-s-3");

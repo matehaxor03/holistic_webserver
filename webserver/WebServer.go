@@ -13,6 +13,8 @@ import (
 	"crypto/rand"
 	class "github.com/matehaxor03/holistic_db_client/class"
 	json "github.com/matehaxor03/holistic_json/json"
+	http_extension "github.com/matehaxor03/holistic_http/http_extension"
+
 )
 
 type WebServer struct {
@@ -157,74 +159,6 @@ func NewWebServer(port string, server_crt_path string, server_key_path string, q
 		return this_holisic_queue_server
 	}*/
 
-	/*
-	formatRequest := func(r *http.Request) string {
-		var request []string
-	
-		url := fmt.Sprintf("%v %v %v", r.Method, r.URL, r.Proto)
-		request = append(request, url)
-		request = append(request, fmt.Sprintf("Host: %v", r.Host))
-		for name, headers := range r.Header {
-			name = strings.ToLower(name)
-			for _, h := range headers {
-				request = append(request, fmt.Sprintf("%v: %v", name, h))
-			}
-		}
-	
-		if r.Method == "POST" {
-			r.ParseForm()
-			request = append(request, "\n")
-			request = append(request, r.Form.Encode())
-		}
-	
-		return strings.Join(request, "\n")
-	}*/
-
-	write_response := func(w http.ResponseWriter, result json.Map, write_response_errors []error) {
-		keys := result.Keys()
-		
-		if len(keys) != 1 {
-			write_response_errors = append(write_response_errors, fmt.Errorf("number of root keys is incorrect"))
-		}
-		
-		if len(write_response_errors) > 0 {
-			inner_map_found := false
-			if len(keys) == 1 {
-				inner_map, inner_map_errors := result.GetMap(keys[0])
-				if inner_map_errors != nil {
-					write_response_errors = append(write_response_errors, inner_map_errors...)
-				} 
-				
-				if inner_map == nil {
-					write_response_errors = append(write_response_errors, fmt.Errorf("inner map is nil"))
-					inner_map_found = false
-				} else {
-					inner_map_found = true
-				}
-			}
-
-			if inner_map_found {
-				(result[keys[0]].(json.Map))["data"] = nil
-				(result[keys[0]].(json.Map))["[errors]"] = write_response_errors
-			} else {
-				result["unknown"] = json.Map{"data":nil, "[errors]":write_response_errors}
-			}
-		}
-
-		var json_payload_builder strings.Builder
-		result_as_string_errors := result.ToJSONString(&json_payload_builder)
-		if result_as_string_errors != nil {
-			write_response_errors = append(write_response_errors, result_as_string_errors...)
-		}
-		
-		w.Header().Set("Content-Type", "application/json")
-		if result_as_string_errors == nil {
-			w.Write([]byte(json_payload_builder.String()))
-		} else {
-			w.Write([]byte(fmt.Sprintf("{\"unknown\":{\"[errors]\":\"%s\", \"data\":null}}", strings.ReplaceAll(fmt.Sprintf("%s", result_as_string_errors), "\"", "\\\""))))
-		}
-	}
-
 	processRequest := func(w http.ResponseWriter, req *http.Request) {
 		var process_request_errors []error
 		result := json.Map{}
@@ -233,7 +167,7 @@ func NewWebServer(port string, server_crt_path string, server_key_path string, q
 		}
 
 		if len(process_request_errors) > 0 {
-			write_response(w, result, process_request_errors)
+			http_extension.WriteResponse(w, result, process_request_errors)
 			return
 		}
 
@@ -247,7 +181,7 @@ func NewWebServer(port string, server_crt_path string, server_key_path string, q
 		}
 
 		if len(process_request_errors) > 0 {
-			write_response(w, result, process_request_errors)
+			http_extension.WriteResponse(w, result, process_request_errors)
 			return
 		}
 
@@ -262,7 +196,7 @@ func NewWebServer(port string, server_crt_path string, server_key_path string, q
 		}
 
 		if len(process_request_errors) > 0 {
-			write_response(w, result, process_request_errors)
+			http_extension.WriteResponse(w, result, process_request_errors)
 			return
 		}
 
@@ -288,7 +222,7 @@ func NewWebServer(port string, server_crt_path string, server_key_path string, q
 		}
 
 		if len(process_request_errors) > 0 {
-			write_response(w, result, process_request_errors)
+			http_extension.WriteResponse(w, result, process_request_errors)
 			return
 		}
 
@@ -301,7 +235,7 @@ func NewWebServer(port string, server_crt_path string, server_key_path string, q
 		}
 
 		if len(process_request_errors) > 0 {
-			write_response(w, result, process_request_errors)
+			http_extension.WriteResponse(w, result, process_request_errors)
 			return
 		}
 
@@ -312,7 +246,7 @@ func NewWebServer(port string, server_crt_path string, server_key_path string, q
 		} 
 
 		if len(process_request_errors) > 0 {
-			write_response(w, result, process_request_errors)
+			http_extension.WriteResponse(w, result, process_request_errors)
 			return
 		}
 
@@ -322,7 +256,7 @@ func NewWebServer(port string, server_crt_path string, server_key_path string, q
 		}
 
 		if len(process_request_errors) > 0 {
-			write_response(w, result, process_request_errors)
+			http_extension.WriteResponse(w, result, process_request_errors)
 			return
 		}
 
