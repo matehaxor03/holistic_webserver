@@ -114,6 +114,7 @@
                         console.log(JSON.stringify(result));
                     }
                 } catch(ex) {
+                    result["unknown"] = {};
                     result["unknown"]["[errors]"] = [ex.toString()];
                     result["unknown"]["[http_status]"] = http.status;
                     callback_function(result);
@@ -140,7 +141,7 @@
         main_content.appendChild(title);
         document.getElementById("content_heading").focus();*/
 
-        var temp_message_type = "ReadRecords_" + decodeURIComponent(table_name);
+        var temp_message_type = "GetSchema_" + decodeURIComponent(table_name);
         var params = {};
         params[temp_message_type] = {};
 
@@ -169,15 +170,50 @@
         main_content.appendChild(title);
         document.getElementById("content_heading").focus();
 
-        var temp_message_type = "GetSchema_" + decodeURIComponent(table_name);
+        var temp_message_type = "ReadRecords_" + decodeURIComponent(table_name);
         var params = {};
-        params[temp_message_type] = {};
+        params[temp_message_type] = {"[select_fields]":["[minimal_fields]"]};
 
         var callback_function = function(result) {
             var message_type = Object.keys(result)[0]
             if(result[message_type]["[errors]"].length > 0) {
                 return;
             }
+
+            var payload = result[message_type];
+            var records = payload["data"];
+            const table = document.createElement("table");
+            for(var i = 0; i < records.length; i++) {
+                var current_record = records[i];
+                var column_names = Object.keys(current_record);
+                {
+                    if(i == 0) {
+                        const rowHeader = document.createElement("tr");
+                        for(var j = 0; j < column_names.length; j++) {
+                            const currentColumnName = column_names[j];
+                            const rowColumnHeader = document.createElement("th");
+                            const rowColumnHeaderText = document.createTextNode(encodeURIComponent(currentColumnName));
+                            rowColumnHeader.appendChild(rowColumnHeaderText);
+                            rowHeader.appendChild(rowColumnHeader);
+                        }
+                        table.appendChild(rowHeader);
+                    }
+                }
+
+                {
+                    const rowData = document.createElement("tr");
+                    for(var j = 0; j < column_names.length; j++) {
+                        const currentColumnName = column_names[j];
+                        const rowColumnData = document.createElement("td");
+                        const rowColumnDataText = document.createTextNode(encodeURIComponent(current_record[currentColumnName]));
+                        rowColumnData.appendChild(rowColumnDataText);
+                        rowData.appendChild(rowColumnData);
+                    }
+                    table.appendChild(rowData);
+                }
+            }
+            main_content.appendChild(table);
+
 
             console.log(result);
             load_records(table_name);
