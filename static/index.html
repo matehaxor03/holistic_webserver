@@ -127,8 +127,9 @@
         http.send(JSON.stringify(params));
     }
 
-    var load_records = function(table_name) {
+    var load_record = function(table_name, recordId) {
         table_name = table_name.replace(/\\\"/g, "\"");
+        console.log(recordId);
         
         /*main_content = document.getElementById("main");
         removeAllChildElements(main_content);
@@ -207,18 +208,26 @@
 
                 {
                     const rowData = document.createElement("tr");
+                    var identifier = {};
                     for(var j = 0; j < column_names.length; j++) {
                         const currentColumnName = column_names[j];
                         const rowColumnData = document.createElement("td");
                         const rowColumnDataText = document.createTextNode(encodeURIComponent(current_record[currentColumnName]));
                         rowColumnData.appendChild(rowColumnDataText);
                         rowData.appendChild(rowColumnData);
+                        
+                        if(j < (column_names.length -1)) {
+                            identifier[currentColumnName] = current_record[currentColumnName];
+                        }
                     }
                     
                     const rowColumnData = document.createElement("td");
                     
                     const viewButton = document.createElement("button");
                     const viewButtonText = document.createTextNode("view");
+                    viewButton.onclick = function () {
+                        load_record(table_name, identifier);
+                    }
                     viewButton.appendChild(viewButtonText);
                     rowColumnData.appendChild(viewButton);
 
@@ -235,7 +244,6 @@
 
 
             console.log(result);
-            load_records(table_name);
         }
         send_http_request(params, callback_function);
     }
