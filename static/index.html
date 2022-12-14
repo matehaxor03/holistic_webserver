@@ -196,6 +196,11 @@
                             rowColumnHeader.appendChild(rowColumnHeaderText);
                             rowHeader.appendChild(rowColumnHeader);
                         }
+                        const rowColumnHeader = document.createElement("th");
+                        const rowColumnHeaderText = document.createTextNode("actions");
+                        rowColumnHeader.appendChild(rowColumnHeaderText);
+                        rowHeader.appendChild(rowColumnHeader);
+
                         table.appendChild(rowHeader);
                     }
                 }
@@ -209,6 +214,20 @@
                         rowColumnData.appendChild(rowColumnDataText);
                         rowData.appendChild(rowColumnData);
                     }
+                    
+                    const rowColumnData = document.createElement("td");
+                    
+                    const viewButton = document.createElement("button");
+                    const viewButtonText = document.createTextNode("view");
+                    viewButton.appendChild(viewButtonText);
+                    rowColumnData.appendChild(viewButton);
+
+                    const editButton = document.createElement("button");
+                    const editButtonText = document.createTextNode("edit");
+                    editButton.appendChild(editButtonText);
+                    rowColumnData.appendChild(editButton);
+
+                    rowData.appendChild(rowColumnData);
                     table.appendChild(rowData);
                 }
             }
