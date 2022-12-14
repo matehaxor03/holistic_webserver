@@ -18,7 +18,7 @@
   float: left;
 }
 
-.top_menu {
+.menu {
     width: 100%;
 }
 
@@ -76,17 +76,22 @@
   <div id="menu" class="menu">
     loading...
   </div>
-
-  <div id="main" class="col-7 col-s-7"></div>
-
-  <div id="extra_attributes" class="col-7 col-s-7">
+  <div class="col-12 col-s-12">
   </div>
+  <div id="main" class="col-7 col-s-7"></div>
 </div>
 
 </body>
 
 <script>
     var url = 'https://' + location.hostname + ':5001/api';
+    var encodeHTMLText = function(text) {
+        text = encodeURIComponent(text);
+        text = text.replaceAll("%20", "\u00A0");
+        text = text.replaceAll("%3A", "\u003A");
+        return text;
+    }
+    
     var removeAllChildElements = function(element) {
         if(element == null) {
             return;
@@ -127,30 +132,58 @@
         http.send(JSON.stringify(params));
     }
 
-    var load_record = function(table_name, recordId) {
+    var navigate_to_manage_record = function(table_name, where_clause, mode) {
         table_name = table_name.replace(/\\\"/g, "\"");
-        console.log(recordId);
-        
-        /*main_content = document.getElementById("main");
+        main_content = document.getElementById("main");
         removeAllChildElements(main_content);
 
         const title = document.createElement("h2");
         title.setAttribute("tabindex", "0");
         title.setAttribute("id", "content_heading");
-        const title_text = document.createTextNode(encodeURIComponent(table_name) + " records");
+        const title_text = document.createTextNode(encodeURIComponent(table_name) + " record");
         title.appendChild(title_text);
         main_content.appendChild(title);
-        document.getElementById("content_heading").focus();*/
+        document.getElementById("content_heading").focus();
 
-        var temp_message_type = "GetSchema_" + decodeURIComponent(table_name);
+        var temp_message_type = "ReadRecords_" + decodeURIComponent(table_name);
         var params = {};
-        params[temp_message_type] = {};
+        params[temp_message_type] = {"[where_fields]":where_clause};
 
         var callback_function = function(result) {
             var message_type = Object.keys(result)[0]
             if(result[message_type]["[errors]"].length > 0) {
                 return;
             }
+
+            var payload = result[message_type];
+            var records = payload["data"];
+            var record = records[0];
+            var column_names = Object.keys(record);
+            const table = document.createElement("table");
+
+            if(mode == "view") {
+                {
+                    for(var i = 0; i < column_names.length; i++) {
+                        const columName = column_names[i];
+                        const rowData = document.createElement("tr");
+                        
+                        const label = document.createElement("td");
+                        const labelText = document.createTextNode(encodeHTMLText(columName));
+                        label.appendChild(labelText);
+                        rowData.appendChild(label)
+
+                        const data = document.createElement("td");
+                        const dataText = document.createTextNode(encodeHTMLText(record[columName]));
+                        data.appendChild(dataText);
+                        rowData.appendChild(data)
+
+                        table.appendChild(rowData);
+                    }
+                }
+            } else {
+
+            }
+            main_content.appendChild(table);
 
             console.log(result);
         }
@@ -226,13 +259,16 @@
                     const viewButton = document.createElement("button");
                     const viewButtonText = document.createTextNode("view");
                     viewButton.onclick = function () {
-                        load_record(table_name, identifier);
+                        navigate_to_manage_record(table_name, identifier, "view");
                     }
                     viewButton.appendChild(viewButtonText);
                     rowColumnData.appendChild(viewButton);
 
                     const editButton = document.createElement("button");
                     const editButtonText = document.createTextNode("edit");
+                    editButton.onclick = function () {
+                        navigate_to_manage_record(table_name, identifier, "edit");
+                    }
                     editButton.appendChild(editButtonText);
                     rowColumnData.appendChild(editButton);
 
