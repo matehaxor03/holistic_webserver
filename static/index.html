@@ -258,19 +258,17 @@
                     columnNameSchema["primary_key"])){
                     if(columnNameSchema["type"] == "bool" || columnNameSchema["type"] == "*bool") {
                         var trueButton =  document.createElement("button");
-                        trueButton.setAttribute("id", columName);
+                        trueButton.setAttribute("id", columName + "_true");
                         trueButton.setAttribute("value", record[columName]);
                         
                         var trueButtonText = document.createTextNode("true");
                         trueButton.appendChild(trueButtonText);
 
                         var falseButton =  document.createElement("button");
-                        falseButton.setAttribute("id", columName);
+                        falseButton.setAttribute("id", columName + "_false");
                         falseButton.setAttribute("value", record[columName]);
                         var falseButtonText = document.createTextNode("false");
                         falseButton.appendChild(falseButtonText);
-
-                        
 
                         if(record[columName] == true) {
                             trueButton.setAttribute("class", "button enabled");
@@ -299,14 +297,74 @@
                         data.appendChild(inputData);
                     }
                 } else {
-                    const dataText = document.createTextNode(encodeHTMLText(record[columName]));
-                    data.appendChild(dataText);
+                    var inputData =  document.createElement("input");
+                        inputData.setAttribute("id", columName);
+                        inputData.setAttribute("value", record[columName]);
+                        inputData.setAttribute("disabled", true);
+                        inputData.setAttribute("style", "border-width:0");
+                        data.appendChild(inputData);
                 }
             }
             rowData.appendChild(data);
             table.appendChild(rowData);
         }
         main_content.appendChild(table);
+
+        if(mode == "edit") {
+            var saveButton = document.createElement("button");
+            saveButton.setAttribute("id", "saveRecordButton");
+            var saveButtonText = document.createTextNode("save");
+            saveButton.appendChild(saveButtonText);
+            saveButton.onclick = function() {
+                result = {};
+                for(var i = 0; i < column_names_sorted.length; i++) {
+                    var column_name = column_names_sorted[i];
+                    var schema_for_column = schema[column_name];
+
+                    if(column_name == "last_modified_date" ||
+                       column_name == "created_date" || 
+                       column_name == "archieved_date") {
+                        continue;
+                    }
+                  
+                    if(schema_for_column["type"] == "bool" || schema_for_column["type"] == "*bool") {
+                        var true_element = document.getElementById(column_name + "_true");
+                        var false_element = document.getElementById(column_name + "_false");
+                        if(false_element.getAttribute("disabled")) {
+                            result[column_name] = true;
+                        } else {
+                            result[column_name] = false;
+                        }
+                    } else if(schema_for_column["type"] == "string" || schema_for_column["type"] == "*string"){
+                        var string_element = document.getElementById(column_name);
+                        result[column_name] = string_element.getAttribute("value");
+                    } else if (schema_for_column["type"] == "uint" ||
+                               schema_for_column["type"] == "uint8" || 
+                               schema_for_column["type"] == "*uint8" || 
+                               schema_for_column["type"] == "uint16" || 
+                               schema_for_column["type"] == "*uint16" ||
+                               schema_for_column["type"] == "uint32" || 
+                               schema_for_column["type"] == "*uint32" ||
+                               schema_for_column["type"] == "uint64" || 
+                               schema_for_column["type"] == "*uint64" ||
+                               schema_for_column["type"] == "int" ||
+                               schema_for_column["type"] == "int8" || 
+                               schema_for_column["type"] == "*int8" || 
+                               schema_for_column["type"] == "int16" || 
+                               schema_for_column["type"] == "*int16" ||
+                               schema_for_column["type"] == "int32" || 
+                               schema_for_column["type"] == "*int32" ||
+                               schema_for_column["type"] == "int64" || 
+                               schema_for_column["type"] == "*int64") {
+                        var number_element = document.getElementById(column_name);
+                        result[column_name] = Number.parseInt(number_element.getAttribute("value"), 10);
+                    }
+                }
+                console.log(result);
+                //save_record(result);
+            }
+            main_content.appendChild(saveButton);
+        }
     }
 
     var navigate_to_manage_record = function(table_name, where_clause, mode) {
