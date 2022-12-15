@@ -137,11 +137,15 @@
         http.send(JSON.stringify(params));
     }
 
-    var navigate_to_manage_record = function(table_name, where_clause, mode) {
-        table_name = table_name.replace(/\\\"/g, "\"");
+    var redraw_record_page = function(result, mode) {
         main_content = document.getElementById("main");
         removeAllChildElements(main_content);
 
+        var keys = Object.keys(result);
+        var message_type = keys[0];
+        var indexOf_underscore = message_type.indexOf("_") + 1;
+        var table_name = message_type.slice(indexOf_underscore);
+        
         const title = document.createElement("h2");
         title.setAttribute("tabindex", "0");
         title.setAttribute("id", "content_heading");
@@ -150,6 +154,163 @@
         main_content.appendChild(title);
         document.getElementById("content_heading").focus();
 
+        var payload = result[message_type];
+        var records = payload["data"];
+        var record = records[0];
+        var column_names = Object.keys(record);
+        var schema = payload["schema"];
+        var schema_keys =  Object.keys(schema);
+        var column_names_sorted = [];
+
+        for(var i=0; i < schema_keys.length; i++) {
+            var schema_definition = schema[schema_keys[i]];
+            if(schema_definition["auto_increment"] && schema_definition["primary_key"]) {
+                column_names_sorted.push(schema_keys[i]);
+            }
+        }
+        
+        {
+            var non_auto_increment_primary_keys = [];
+            for(var i=0; i < schema_keys.length; i++) {
+                var schema_definition = schema[schema_keys[i]];
+                if(!(schema_definition["auto_increment"]) && schema_definition["primary_key"]) {
+                    non_auto_increment_primary_keys.push(schema_keys[i]);
+                }
+            }
+            non_auto_increment_primary_keys.sort();
+
+            for(var i=0; i < non_auto_increment_primary_keys.length; i++) {
+                column_names_sorted.push(non_auto_increment_primary_keys[i]);
+            }
+        }
+
+        if(schema["name"]) {
+            column_names_sorted.push("name");
+        }
+
+        {
+            var other_fields = [];
+            for(var i=0; i < schema_keys.length; i++) {
+                var schema_column_name = schema_keys[i];
+                var schema_definition = schema[schema_column_name];
+                
+                if(schema_definition["primary_key"]) {
+                    continue
+                }
+
+                if(schema_column_name == "name" ||
+                    schema_column_name == "active" ||
+                    schema_column_name == "archieved" || 
+                    schema_column_name == "last_modified_date" || 
+                    schema_column_name == "created_date" || 
+                    schema_column_name == "archieved_date" ) {
+                    continue
+                }
+                other_fields.push(schema_column_name);
+            }
+            other_fields.sort();
+
+            for(var i=0; i < other_fields.length; i++) {
+                column_names_sorted.push(other_fields[i]);
+            }
+        }
+
+        if(schema["active"]) {
+            column_names_sorted.push("active");
+        }
+
+        if(schema["last_modified_date"]) {
+            column_names_sorted.push("last_modified_date");
+        }
+
+        if(schema["created_date"]) {
+            column_names_sorted.push("created_date");
+        }
+
+        if(schema["archieved"]) {
+            column_names_sorted.push("archieved");
+        }
+
+        if(schema["archieved_date"]) {
+            column_names_sorted.push("archieved_date");
+        }
+
+        const table = document.createElement("table");
+
+        for(var i = 0; i < column_names_sorted.length; i++) {
+            const columName = column_names_sorted[i];
+            const columnNameSchema = schema[columName];
+            const rowData = document.createElement("tr");
+            
+            const label = document.createElement("td");
+            const labelText = document.createTextNode(encodeHTMLText(columName));
+            label.appendChild(labelText);
+            rowData.appendChild(label)
+
+            const data = document.createElement("td");
+            if(mode == "view") {
+                const dataText = document.createTextNode(encodeHTMLText(record[columName]));
+                data.appendChild(dataText);
+            } else if(mode == "edit") {
+                if(!(columName == "last_modified_date" ||
+                    columName == "created_date" || 
+                    columName == "archieved_date" || 
+                    columnNameSchema["primary_key"])){
+                    if(columnNameSchema["type"] == "bool" || columnNameSchema["type"] == "*bool") {
+                        var trueButton =  document.createElement("button");
+                        trueButton.setAttribute("id", columName);
+                        trueButton.setAttribute("value", record[columName]);
+                        
+                        var trueButtonText = document.createTextNode("true");
+                        trueButton.appendChild(trueButtonText);
+
+                        var falseButton =  document.createElement("button");
+                        falseButton.setAttribute("id", columName);
+                        falseButton.setAttribute("value", record[columName]);
+                        var falseButtonText = document.createTextNode("false");
+                        falseButton.appendChild(falseButtonText);
+
+                        
+
+                        if(record[columName] == true) {
+                            trueButton.setAttribute("class", "button enabled");
+                            trueButton.setAttribute("disabled", true);
+                            falseButton.setAttribute("class", "button");
+                            falseButton.onclick = function() {
+                                record[columName] = false;
+                                redraw_record_page(result, mode);
+                            }
+                        } else if(record[columName] == false) {
+                            trueButton.setAttribute("class", "button");
+                            trueButton.onclick = function() {
+                                record[columName] = true;
+                                redraw_record_page(result, mode);
+                            }
+                            falseButton.setAttribute("class", "button enabled");
+                            falseButton.setAttribute("disabled", true);
+                        }
+
+                        data.appendChild(trueButton);
+                        data.appendChild(falseButton);
+                    } else {
+                        var inputData =  document.createElement("input");
+                        inputData.setAttribute("id", columName);
+                        inputData.setAttribute("value", record[columName]);
+                        data.appendChild(inputData);
+                    }
+                } else {
+                    const dataText = document.createTextNode(encodeHTMLText(record[columName]));
+                    data.appendChild(dataText);
+                }
+            }
+            rowData.appendChild(data);
+            table.appendChild(rowData);
+        }
+        main_content.appendChild(table);
+    }
+
+    var navigate_to_manage_record = function(table_name, where_clause, mode) {
+        table_name = table_name.replace(/\\\"/g, "\"");
         var temp_message_type = "ReadRecords_" + decodeURIComponent(table_name);
         var params = {};
         params[temp_message_type] = {"[where_fields]":where_clause, "[include_schema]":true};
@@ -159,152 +320,8 @@
             if(result[message_type]["[errors]"].length > 0) {
                 return;
             }
-
-            var payload = result[message_type];
-            var records = payload["data"];
-            var record = records[0];
-            var column_names = Object.keys(record);
-            var schema = payload["schema"];
-            var schema_keys =  Object.keys(schema);
-            var column_names_sorted = [];
-
-            for(var i=0; i < schema_keys.length; i++) {
-                var schema_definition = schema[schema_keys[i]];
-                if(schema_definition["auto_increment"] && schema_definition["primary_key"]) {
-                    column_names_sorted.push(schema_keys[i]);
-                }
-            }
-            
-            {
-                var non_auto_increment_primary_keys = [];
-                for(var i=0; i < schema_keys.length; i++) {
-                    var schema_definition = schema[schema_keys[i]];
-                    if(!(schema_definition["auto_increment"]) && schema_definition["primary_key"]) {
-                        non_auto_increment_primary_keys.push(schema_keys[i]);
-                    }
-                }
-                non_auto_increment_primary_keys.sort();
-
-                for(var i=0; i < non_auto_increment_primary_keys.length; i++) {
-                    column_names_sorted.push(non_auto_increment_primary_keys[i]);
-                }
-            }
-
-            if(schema["name"]) {
-                column_names_sorted.push("name");
-            }
-
-            {
-                var other_fields = [];
-                for(var i=0; i < schema_keys.length; i++) {
-                    var schema_column_name = schema_keys[i];
-                    var schema_definition = schema[schema_column_name];
-                    
-                    if(schema_definition["primary_key"]) {
-                       continue
-                    }
-
-                    if(schema_column_name == "name" ||
-                       schema_column_name == "active" ||
-                       schema_column_name == "archieved" || 
-                       schema_column_name == "last_modified_date" || 
-                       schema_column_name == "created_date" || 
-                       schema_column_name == "archieved_date" ) {
-                        continue
-                    }
-                    other_fields.push(schema_column_name);
-                }
-                other_fields.sort();
-
-                for(var i=0; i < other_fields.length; i++) {
-                    column_names_sorted.push(other_fields[i]);
-                }
-            }
-
-            if(schema["active"]) {
-                column_names_sorted.push("active");
-            }
-
-            if(schema["last_modified_date"]) {
-                column_names_sorted.push("last_modified_date");
-            }
-
-            if(schema["created_date"]) {
-                column_names_sorted.push("created_date");
-            }
-
-            if(schema["archieved"]) {
-                column_names_sorted.push("archieved");
-            }
-
-            if(schema["archieved_date"]) {
-                column_names_sorted.push("archieved_date");
-            }
-
-            const table = document.createElement("table");
-
-            for(var i = 0; i < column_names_sorted.length; i++) {
-                const columName = column_names_sorted[i];
-                const columnNameSchema = schema[columName];
-                const rowData = document.createElement("tr");
-                
-                const label = document.createElement("td");
-                const labelText = document.createTextNode(encodeHTMLText(columName));
-                label.appendChild(labelText);
-                rowData.appendChild(label)
-
-                const data = document.createElement("td");
-                if(mode == "view") {
-                    const dataText = document.createTextNode(encodeHTMLText(record[columName]));
-                    data.appendChild(dataText);
-                } else if(mode == "edit") {
-                    if(!(columName == "last_modified_date" ||
-                       columName == "created_date" || 
-                       columName == "archieved_date" || 
-                       columnNameSchema["primary_key"])){
-                        if(columnNameSchema["type"] == "bool" || columnNameSchema["type"] == "*bool") {
-                            var trueButton =  document.createElement("button");
-                            trueButton.setAttribute("id", columName);
-                            trueButton.setAttribute("value", record[columName]);
-                           
-                            var trueButtonText = document.createTextNode("true");
-                            trueButton.appendChild(trueButtonText);
-
-                            var falseButton =  document.createElement("button");
-                            falseButton.setAttribute("id", columName);
-                            falseButton.setAttribute("value", record[columName]);
-                            var falseButtonText = document.createTextNode("false");
-                            falseButton.appendChild(falseButtonText);
-
-                           
-
-                            if(record[columName] == true) {
-                                trueButton.setAttribute("class", "button enabled");
-                                trueButton.setAttribute("disabled", true);
-                                falseButton.setAttribute("class", "button");
-                            } else if(record[columName] == false) {
-                                trueButton.setAttribute("class", "button");
-                                falseButton.setAttribute("class", "button enabled");
-                                falseButton.setAttribute("disabled", true);
-                            }
-
-                            data.appendChild(trueButton);
-                            data.appendChild(falseButton);
-                        } else {
-                            var inputData =  document.createElement("input");
-                            inputData.setAttribute("id", columName);
-                            inputData.setAttribute("value", record[columName]);
-                            data.appendChild(inputData);
-                        }
-                    } else {
-                        const dataText = document.createTextNode(encodeHTMLText(record[columName]));
-                        data.appendChild(dataText);
-                    }
-                }
-                rowData.appendChild(data);
-                table.appendChild(rowData);
-            }
-            main_content.appendChild(table);
+            redraw_record_page(result, mode);
+           
 
             console.log(result);
         }
