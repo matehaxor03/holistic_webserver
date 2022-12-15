@@ -245,6 +245,7 @@
 
             for(var i = 0; i < column_names_sorted.length; i++) {
                 const columName = column_names_sorted[i];
+                const columnNameSchema = schema[columName];
                 const rowData = document.createElement("tr");
                 
                 const label = document.createElement("td");
@@ -257,10 +258,18 @@
                     const dataText = document.createTextNode(encodeHTMLText(record[columName]));
                     data.appendChild(dataText);
                 } else if(mode == "edit") {
-                    var inputData =  document.createElement("input");
-                    inputData.setAttribute("id", columName);
-                    inputData.setAttribute("value", record[columName]);
-                    data.appendChild(inputData);
+                    if(!(columName == "last_modified_date" ||
+                       columName == "created_date" || 
+                       columName == "archieved_date" || 
+                       columnNameSchema["primary_key"])){
+                        var inputData =  document.createElement("input");
+                        inputData.setAttribute("id", columName);
+                        inputData.setAttribute("value", record[columName]);
+                        data.appendChild(inputData);
+                    } else {
+                        const dataText = document.createTextNode(encodeHTMLText(record[columName]));
+                        data.appendChild(dataText);
+                    }
                 }
                 rowData.appendChild(data);
                 table.appendChild(rowData);
