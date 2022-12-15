@@ -139,7 +139,10 @@
 
     var crud_record = function(mode, table_name, result) {
         table_name = table_name.replace(/\\\"/g, "\"");
-        var temp_message_type = "UpdateRecords_" + decodeURIComponent(table_name);
+        var temp_message_type = "";
+        if(mode == "update") {
+            temp_message_type = "UpdateRecords_" + decodeURIComponent(table_name);
+        }
         var params = {};
         params[temp_message_type] = {};
         params[temp_message_type]["data"]= [result];
@@ -311,7 +314,7 @@
                         data.appendChild(trueButton);
                         data.appendChild(falseButton);
                     } else {
-                        var inputData =  document.createElement("input");
+                        var inputData = document.createElement("input");
                         inputData.setAttribute("id", columName);
                         inputData.setAttribute("value", record[columName]);
                         data.appendChild(inputData);
@@ -357,7 +360,7 @@
                         }
                     } else if(schema_for_column["type"] == "string" || schema_for_column["type"] == "*string"){
                         var string_element = document.getElementById(column_name);
-                        save_result[column_name] = string_element.getAttribute("value");
+                        save_result[column_name] = string_element.value;
                     } else if (schema_for_column["type"] == "uint" ||
                                schema_for_column["type"] == "uint8" || 
                                schema_for_column["type"] == "*uint8" || 
@@ -377,7 +380,7 @@
                                schema_for_column["type"] == "int64" || 
                                schema_for_column["type"] == "*int64") {
                         var number_element = document.getElementById(column_name);
-                        save_result[column_name] = Number.parseInt(number_element.getAttribute("value"), 10);
+                        save_result[column_name] = Number.parseInt(number_element.value, 10);
                     }
                 }
                 console.log(save_result);
