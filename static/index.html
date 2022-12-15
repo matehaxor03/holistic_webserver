@@ -234,16 +234,16 @@
             column_names_sorted.push("active");
         }
 
+        if(schema["archieved"]) {
+            column_names_sorted.push("archieved");
+        }
+
         if(schema["last_modified_date"]) {
             column_names_sorted.push("last_modified_date");
         }
 
         if(schema["created_date"]) {
             column_names_sorted.push("created_date");
-        }
-
-        if(schema["archieved"]) {
-            column_names_sorted.push("archieved");
         }
 
         if(schema["archieved_date"]) {
@@ -253,7 +253,7 @@
         const table = document.createElement("table");
 
         for(var i = 0; i < column_names_sorted.length; i++) {
-            const columName = column_names_sorted[i];
+            const columName = column_names_sorted[i].split('').join('');
             const columnNameSchema = schema[columName];
             const rowData = document.createElement("tr");
             
@@ -306,18 +306,32 @@
                         data.appendChild(trueButton);
                         data.appendChild(falseButton);
                     } else {
-                        var inputData = document.createElement("input");
-                        inputData.setAttribute("id", columName);
-                        inputData.setAttribute("value", record[columName]);
-                        data.appendChild(inputData);
+                        {
+                            var inputData = document.createElement("input");
+                            inputData.setAttribute("id", columName);
+                            inputData.value = record[columName];
+
+                            var key_up_function = function(event) {
+                                var target_column_name = columName;
+                                console.log(target_column_name);
+                                console.log(event.target.value);
+
+                                record[target_column_name] = event.target.value;
+                            }
+                           
+                            inputData.onkeyup = key_up_function;
+                            data.appendChild(inputData);
+                        }
                     }
                 } else {
-                    var inputData =  document.createElement("input");
-                        inputData.setAttribute("id", columName);
-                        inputData.setAttribute("value", record[columName]);
-                        inputData.setAttribute("disabled", true);
-                        inputData.setAttribute("style", "border-width:0");
-                        data.appendChild(inputData);
+                    {
+                        var inputData =  document.createElement("input");
+                            inputData.setAttribute("id", columName);
+                            inputData.setAttribute("value", record[columName]);
+                            inputData.setAttribute("disabled", true);
+                            inputData.setAttribute("style", "border-width:0");
+                            data.appendChild(inputData);
+                    }
                 }
             }
             rowData.appendChild(data);
@@ -347,13 +361,19 @@
                         var true_element = document.getElementById(column_name + "_true");
                         var false_element = document.getElementById(column_name + "_false");
                         if(false_element.getAttribute("disabled")) {
-                            save_result[column_name] = false;
+                            if(record[column_name] != false) {
+                                save_result[column_name] = false;
+                            }
                         } else {
-                            save_result[column_name] = true;
+                            if(record[column_name] != true) {
+                                save_result[column_name] = true;
+                            }
                         }
                     } else if(schema_for_column["type"] == "string" || schema_for_column["type"] == "*string"){
                         var string_element = document.getElementById(column_name);
-                        save_result[column_name] = string_element.value;
+                        if(record[column_name] != string_element.value) {
+                            save_result[column_name] = string_element.value;
+                        }
                     } else if (schema_for_column["type"] == "uint" ||
                                schema_for_column["type"] == "uint8" || 
                                schema_for_column["type"] == "*uint8" || 
@@ -373,7 +393,10 @@
                                schema_for_column["type"] == "int64" || 
                                schema_for_column["type"] == "*int64") {
                         var number_element = document.getElementById(column_name);
-                        save_result[column_name] = Number.parseInt(number_element.value, 10);
+                        var new_value = Number.parseInt(number_element.value, 10);
+                        if(record[column_name] != new_value || schema_for_column["primary_key"]) {
+                            save_result[column_name] = new_value;
+                        }
                     }
                 }
                 console.log(save_result);
