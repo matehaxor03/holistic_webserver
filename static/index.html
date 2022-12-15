@@ -35,6 +35,11 @@
     color: #ffffff;
 }
 
+.enabled {
+    background-color: black;
+    color: #ffffff;
+}
+
 [class*="col-"] {
   width: 100%;
 }
@@ -163,7 +168,6 @@
             var schema_keys =  Object.keys(schema);
             var column_names_sorted = [];
 
-            // add all auto increment primary keys
             for(var i=0; i < schema_keys.length; i++) {
                 var schema_definition = schema[schema_keys[i]];
                 if(schema_definition["auto_increment"] && schema_definition["primary_key"]) {
@@ -171,7 +175,6 @@
                 }
             }
             
-            // add all non-auto increment primary keys
             {
                 var non_auto_increment_primary_keys = [];
                 for(var i=0; i < schema_keys.length; i++) {
@@ -187,12 +190,10 @@
                 }
             }
 
-            // add name field
             if(schema["name"]) {
                 column_names_sorted.push("name");
             }
 
-            // add other fields active, 
             {
                 var other_fields = [];
                 for(var i=0; i < schema_keys.length; i++) {
@@ -220,7 +221,6 @@
                 }
             }
 
-            // add created/last modeifed active etc
             if(schema["active"]) {
                 column_names_sorted.push("active");
             }
@@ -262,10 +262,40 @@
                        columName == "created_date" || 
                        columName == "archieved_date" || 
                        columnNameSchema["primary_key"])){
-                        var inputData =  document.createElement("input");
-                        inputData.setAttribute("id", columName);
-                        inputData.setAttribute("value", record[columName]);
-                        data.appendChild(inputData);
+                        if(columnNameSchema["type"] == "bool" || columnNameSchema["type"] == "*bool") {
+                            var trueButton =  document.createElement("button");
+                            trueButton.setAttribute("id", columName);
+                            trueButton.setAttribute("value", record[columName]);
+                           
+                            var trueButtonText = document.createTextNode("true");
+                            trueButton.appendChild(trueButtonText);
+
+                            var falseButton =  document.createElement("button");
+                            falseButton.setAttribute("id", columName);
+                            falseButton.setAttribute("value", record[columName]);
+                            var falseButtonText = document.createTextNode("false");
+                            falseButton.appendChild(falseButtonText);
+
+                           
+
+                            if(record[columName] == true) {
+                                trueButton.setAttribute("class", "button enabled");
+                                trueButton.setAttribute("disabled", true);
+                                falseButton.setAttribute("class", "button");
+                            } else if(record[columName] == false) {
+                                trueButton.setAttribute("class", "button");
+                                falseButton.setAttribute("class", "button enabled");
+                                falseButton.setAttribute("disabled", true);
+                            }
+
+                            data.appendChild(trueButton);
+                            data.appendChild(falseButton);
+                        } else {
+                            var inputData =  document.createElement("input");
+                            inputData.setAttribute("id", columName);
+                            inputData.setAttribute("value", record[columName]);
+                            data.appendChild(inputData);
+                        }
                     } else {
                         const dataText = document.createTextNode(encodeHTMLText(record[columName]));
                         data.appendChild(dataText);
