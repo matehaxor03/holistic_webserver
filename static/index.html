@@ -243,27 +243,27 @@
 
             const table = document.createElement("table");
 
-            if(mode == "view") {
-                {
-                    for(var i = 0; i < column_names_sorted.length; i++) {
-                        const columName = column_names_sorted[i];
-                        const rowData = document.createElement("tr");
-                        
-                        const label = document.createElement("td");
-                        const labelText = document.createTextNode(encodeHTMLText(columName));
-                        label.appendChild(labelText);
-                        rowData.appendChild(label)
+            for(var i = 0; i < column_names_sorted.length; i++) {
+                const columName = column_names_sorted[i];
+                const rowData = document.createElement("tr");
+                
+                const label = document.createElement("td");
+                const labelText = document.createTextNode(encodeHTMLText(columName));
+                label.appendChild(labelText);
+                rowData.appendChild(label)
 
-                        const data = document.createElement("td");
-                        const dataText = document.createTextNode(encodeHTMLText(record[columName]));
-                        data.appendChild(dataText);
-                        rowData.appendChild(data)
-
-                        table.appendChild(rowData);
-                    }
+                const data = document.createElement("td");
+                if(mode == "view") {
+                    const dataText = document.createTextNode(encodeHTMLText(record[columName]));
+                    data.appendChild(dataText);
+                } else if(mode == "edit") {
+                    var inputData =  document.createElement("input");
+                    inputData.setAttribute("id", columName);
+                    inputData.setAttribute("value", record[columName]);
+                    data.appendChild(inputData);
                 }
-            } else {
-
+                rowData.appendChild(data);
+                table.appendChild(rowData);
             }
             main_content.appendChild(table);
 
