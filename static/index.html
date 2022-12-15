@@ -137,6 +137,26 @@
         http.send(JSON.stringify(params));
     }
 
+    var crud_record = function(mode, table_name, result) {
+        table_name = table_name.replace(/\\\"/g, "\"");
+        var temp_message_type = "UpdateRecords_" + decodeURIComponent(table_name);
+        var params = {};
+        params[temp_message_type] = {};
+        params[temp_message_type]["data"]= [result];
+
+        var callback_function = function(result) {
+            var message_type = Object.keys(result)[0]
+            if(result[message_type]["[errors]"].length > 0) {
+                return;
+            }
+            
+           
+
+            console.log(result);
+        }
+        send_http_request(params, callback_function);
+    }
+
     var redraw_record_page = function(result, mode) {
         main_content = document.getElementById("main");
         removeAllChildElements(main_content);
@@ -316,7 +336,7 @@
             var saveButtonText = document.createTextNode("save");
             saveButton.appendChild(saveButtonText);
             saveButton.onclick = function() {
-                result = {};
+                save_result = {};
                 for(var i = 0; i < column_names_sorted.length; i++) {
                     var column_name = column_names_sorted[i];
                     var schema_for_column = schema[column_name];
@@ -331,13 +351,13 @@
                         var true_element = document.getElementById(column_name + "_true");
                         var false_element = document.getElementById(column_name + "_false");
                         if(false_element.getAttribute("disabled")) {
-                            result[column_name] = true;
+                            save_result[column_name] = false;
                         } else {
-                            result[column_name] = false;
+                            save_result[column_name] = true;
                         }
                     } else if(schema_for_column["type"] == "string" || schema_for_column["type"] == "*string"){
                         var string_element = document.getElementById(column_name);
-                        result[column_name] = string_element.getAttribute("value");
+                        save_result[column_name] = string_element.getAttribute("value");
                     } else if (schema_for_column["type"] == "uint" ||
                                schema_for_column["type"] == "uint8" || 
                                schema_for_column["type"] == "*uint8" || 
@@ -357,11 +377,11 @@
                                schema_for_column["type"] == "int64" || 
                                schema_for_column["type"] == "*int64") {
                         var number_element = document.getElementById(column_name);
-                        result[column_name] = Number.parseInt(number_element.getAttribute("value"), 10);
+                        save_result[column_name] = Number.parseInt(number_element.getAttribute("value"), 10);
                     }
                 }
-                console.log(result);
-                //save_record(result);
+                console.log(save_result);
+                crud_record("update", table_name, save_result);
             }
             main_content.appendChild(saveButton);
         }
