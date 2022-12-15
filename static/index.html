@@ -502,6 +502,16 @@
             }
             main_content.appendChild(table);
 
+            var backButton = document.createElement("button");
+            backButton.setAttribute("class", "button");
+            backButton.setAttribute("id", "backRecordButton");
+            var backButtonText = document.createTextNode("back");
+            backButton.appendChild(backButtonText);
+            backButton.onclick = function() {
+                navigate_to_home_page();
+            }
+            main_content.appendChild(backButton);
+
 
             console.log(result);
         }
@@ -555,7 +565,7 @@
         spacer_element.setAttribute("class", "col-12 col-s-12");
         
         
-        main_content.appendChild(heading_text);
+        main_content.appendChild(heading_element);
         main_content.appendChild(spacer_element);
         main_content.appendChild(menus_element);
         load_table_names();
