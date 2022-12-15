@@ -147,7 +147,7 @@
 
         var temp_message_type = "ReadRecords_" + decodeURIComponent(table_name);
         var params = {};
-        params[temp_message_type] = {"[where_fields]":where_clause};
+        params[temp_message_type] = {"[where_fields]":where_clause, "[include_schema]":true};
 
         var callback_function = function(result) {
             var message_type = Object.keys(result)[0]
@@ -159,12 +159,94 @@
             var records = payload["data"];
             var record = records[0];
             var column_names = Object.keys(record);
+            var schema = payload["schema"];
+            var schema_keys =  Object.keys(schema);
+            var column_names_sorted = [];
+
+            // add all auto increment primary keys
+            for(var i=0; i < schema_keys.length; i++) {
+                var schema_definition = schema[schema_keys[i]];
+                if(schema_definition["auto_increment"] && schema_definition["primary_key"]) {
+                    column_names_sorted.push(schema_keys[i]);
+                }
+            }
+            
+            // add all non-auto increment primary keys
+            {
+                var non_auto_increment_primary_keys = [];
+                for(var i=0; i < schema_keys.length; i++) {
+                    var schema_definition = schema[schema_keys[i]];
+                    if(!(schema_definition["auto_increment"]) && schema_definition["primary_key"]) {
+                        non_auto_increment_primary_keys.push(schema_keys[i]);
+                    }
+                }
+                non_auto_increment_primary_keys.sort();
+
+                for(var i=0; i < non_auto_increment_primary_keys.length; i++) {
+                    column_names_sorted.push(non_auto_increment_primary_keys[i]);
+                }
+            }
+
+            // add name field
+            if(schema["name"]) {
+                column_names_sorted.push("name");
+            }
+
+            // add other fields active, 
+            {
+                var other_fields = [];
+                for(var i=0; i < schema_keys.length; i++) {
+                    var schema_column_name = schema_keys[i];
+                    var schema_definition = schema[schema_column_name];
+                    
+                    if(schema_definition["primary_key"]) {
+                       continue
+                    }
+
+                    if(schema_column_name == "name" ||
+                       schema_column_name == "active" ||
+                       schema_column_name == "archieved" || 
+                       schema_column_name == "last_modified_date" || 
+                       schema_column_name == "created_date" || 
+                       schema_column_name == "archieved_date" ) {
+                        continue
+                    }
+                    other_fields.push(schema_column_name);
+                }
+                other_fields.sort();
+
+                for(var i=0; i < other_fields.length; i++) {
+                    column_names_sorted.push(other_fields[i]);
+                }
+            }
+
+            // add created/last modeifed active etc
+            if(schema["active"]) {
+                column_names_sorted.push("active");
+            }
+
+            if(schema["last_modified_date"]) {
+                column_names_sorted.push("last_modified_date");
+            }
+
+            if(schema["created_date"]) {
+                column_names_sorted.push("created_date");
+            }
+
+            if(schema["archieved"]) {
+                column_names_sorted.push("archieved");
+            }
+
+            if(schema["archieved_date"]) {
+                column_names_sorted.push("archieved_date");
+            }
+
             const table = document.createElement("table");
 
             if(mode == "view") {
                 {
-                    for(var i = 0; i < column_names.length; i++) {
-                        const columName = column_names[i];
+                    for(var i = 0; i < column_names_sorted.length; i++) {
+                        const columName = column_names_sorted[i];
                         const rowData = document.createElement("tr");
                         
                         const label = document.createElement("td");
