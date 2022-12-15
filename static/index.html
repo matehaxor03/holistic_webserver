@@ -251,7 +251,7 @@
             if(mode == "view") {
                 const dataText = document.createTextNode(encodeHTMLText(record[columName]));
                 data.appendChild(dataText);
-            } else if(mode == "edit") {
+            } else if(mode == "update") {
                 if(!(columName == "last_modified_date" ||
                     columName == "created_date" || 
                     columName == "archieved_date" || 
@@ -310,7 +310,7 @@
         }
         main_content.appendChild(table);
 
-        if(mode == "edit") {
+        if(mode == "update") {
             var saveButton = document.createElement("button");
             saveButton.setAttribute("id", "saveRecordButton");
             var saveButtonText = document.createTextNode("save");
@@ -463,7 +463,7 @@
                     const editButton = document.createElement("button");
                     const editButtonText = document.createTextNode("edit");
                     editButton.onclick = function () {
-                        navigate_to_manage_record(table_name, identifier, "edit");
+                        navigate_to_manage_record(table_name, identifier, "update");
                     }
                     editButton.appendChild(editButtonText);
                     rowColumnData.appendChild(editButton);
