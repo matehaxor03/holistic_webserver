@@ -515,7 +515,7 @@
 
         var temp_message_type = "ReadRecords_" + decodeURIComponent(table_name);
         var params = {};
-        params[temp_message_type] = {"[select_fields]":["[minimal_fields]"]};
+        params[temp_message_type] = {"[select_fields]":["[minimal_fields]"],"[include_schema]":true};
 
         var callback_function = function(result) {
             var message_type = Object.keys(result)[0]
@@ -525,17 +525,48 @@
 
             var payload = result[message_type];
             var records = payload["data"];
+
+            var schema = result[message_type]["schema"]; 
+            var schema_keys =  Object.keys(schema);
+            var column_names_sorted = [];
+            for(var i=0; i < schema_keys.length; i++) {
+                var schema_definition = schema[schema_keys[i]];
+                if(schema_definition["auto_increment"] && schema_definition["primary_key"]) {
+                    column_names_sorted.push(schema_keys[i]);
+                }
+            }
+            
+            {
+                var non_auto_increment_primary_keys = [];
+                for(var i=0; i < schema_keys.length; i++) {
+                    var schema_definition = schema[schema_keys[i]];
+                    if(!(schema_definition["auto_increment"]) && schema_definition["primary_key"]) {
+                        non_auto_increment_primary_keys.push(schema_keys[i]);
+                    }
+                }
+                non_auto_increment_primary_keys.sort();
+
+                for(var i=0; i < non_auto_increment_primary_keys.length; i++) {
+                    column_names_sorted.push(non_auto_increment_primary_keys[i]);
+                }
+            }
+
+            if(schema["name"]) {
+                column_names_sorted.push("name");
+            }
+
+           
             const table = document.createElement("table");
             for(var i = 0; i < records.length; i++) {
                 var current_record = records[i];
-                var column_names = Object.keys(current_record);
+                var column_names = column_names_sorted;
                 {
                     if(i == 0) {
                         const rowHeader = document.createElement("tr");
                         for(var j = 0; j < column_names.length; j++) {
                             const currentColumnName = column_names[j];
                             const rowColumnHeader = document.createElement("th");
-                            const rowColumnHeaderText = document.createTextNode(encodeURIComponent(currentColumnName));
+                            const rowColumnHeaderText = document.createTextNode(encodeHTMLText(currentColumnName));
                             rowColumnHeader.appendChild(rowColumnHeaderText);
                             rowHeader.appendChild(rowColumnHeader);
                         }
@@ -554,7 +585,7 @@
                     for(var j = 0; j < column_names.length; j++) {
                         const currentColumnName = column_names[j];
                         const rowColumnData = document.createElement("td");
-                        const rowColumnDataText = document.createTextNode(encodeURIComponent(current_record[currentColumnName]));
+                        const rowColumnDataText = document.createTextNode(encodeHTMLText(current_record[currentColumnName]));
                         rowColumnData.appendChild(rowColumnDataText);
                         rowData.appendChild(rowColumnData);
                         
