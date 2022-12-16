@@ -138,7 +138,10 @@
             temp_message_type = "UpdateRecords_" + decodeURIComponent(table_name);
         } else if(mode == "create") {
             temp_message_type = "CreateRecords_" + decodeURIComponent(table_name);
+        } else if(mode == "delete") {
+            temp_message_type = "UpdateRecords_" + decodeURIComponent(table_name);
         }
+
         var params = {};
         params[temp_message_type] = {};
         params[temp_message_type]["data"]= [result];
@@ -364,6 +367,7 @@
             rowData.appendChild(data);
             table.appendChild(rowData);
         }
+        
         main_content.appendChild(table);
 
         if(mode == "update" || mode == "create") {
@@ -453,8 +457,60 @@
                 }  else {
                     navigate_to_view_table(table_name);
                 }
-            }
+            } 
+            
             main_content.appendChild(saveButton);
+
+            if(mode == "update") {
+                var deleteButton = document.createElement("button");
+                deleteButton.setAttribute("class", "button");
+                deleteButton.setAttribute("id", "deleteRecordButton");
+                var deleteButtonText = document.createTextNode("delete");
+                deleteButton.appendChild(deleteButtonText);
+                deleteButton.onclick = function() {
+                    save_result = {};
+                    for(var i = 0; i < column_names_sorted.length; i++) {
+                        var column_name = column_names_sorted[i];
+                        var schema_for_column = schema[column_name];
+
+                        if(column_name !== "archieved") {
+                            if(!schema_for_column["primary_key"]) {
+                                continue;
+                            }
+                        }
+
+                        if((schema_for_column["type"] == "bool" || schema_for_column["type"] == "*bool") && column_name === "archieved") {
+                            save_result[column_name] = true;
+                        } else if (schema_for_column["type"] == "uint" ||
+                                schema_for_column["type"] == "uint8" || 
+                                schema_for_column["type"] == "*uint8" || 
+                                schema_for_column["type"] == "uint16" || 
+                                schema_for_column["type"] == "*uint16" ||
+                                schema_for_column["type"] == "uint32" || 
+                                schema_for_column["type"] == "*uint32" ||
+                                schema_for_column["type"] == "uint64" || 
+                                schema_for_column["type"] == "*uint64" ||
+                                schema_for_column["type"] == "int" ||
+                                schema_for_column["type"] == "int8" || 
+                                schema_for_column["type"] == "*int8" || 
+                                schema_for_column["type"] == "int16" || 
+                                schema_for_column["type"] == "*int16" ||
+                                schema_for_column["type"] == "int32" || 
+                                schema_for_column["type"] == "*int32" ||
+                                schema_for_column["type"] == "int64" || 
+                                schema_for_column["type"] == "*int64") {
+                            var number_element = document.getElementById(column_name);
+                            var new_value = Number.parseInt(number_element.value, 10);
+
+                            if(schema_for_column["primary_key"]) {
+                                save_result[column_name] = new_value;
+                            }
+                        }
+                    }
+                    crud_record("delete", table_name, save_result);
+                }
+                main_content.appendChild(deleteButton);
+            }
         }
 
         var backButton = document.createElement("button");
