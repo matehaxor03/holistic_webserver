@@ -88,6 +88,7 @@
         text = encodeURIComponent(text);
         text = text.replaceAll("%20", "\u00A0");
         text = text.replaceAll("%3A", "\u003A");
+        text = text.replaceAll("%2F", "\u002F");
         return text;
     }
     
@@ -197,6 +198,21 @@
             }
         }
 
+        {
+            var foreign_keys = [];
+            for(var i=0; i < schema_keys.length; i++) {
+                var schema_definition = schema[schema_keys[i]];
+                if(schema_definition["foreign_key"]) {
+                    foreign_keys.push(schema_keys[i]);
+                }
+            }
+            foreign_keys.sort();
+
+            for(var i=0; i < foreign_keys.length; i++) {
+                column_names_sorted.push(foreign_keys[i]);
+            }
+        }
+
         if(schema["name"]) {
             column_names_sorted.push("name");
         }
@@ -207,7 +223,7 @@
                 var schema_column_name = schema_keys[i];
                 var schema_definition = schema[schema_column_name];
                 
-                if(schema_definition["primary_key"]) {
+                if(schema_definition["primary_key"] || schema_definition["foreign_key"]) {
                     continue
                 }
 
@@ -283,7 +299,8 @@
                 if(!(columName == "last_modified_date" ||
                     columName == "created_date" || 
                     columName == "archieved_date" || 
-                    columnNameSchema["primary_key"])) {
+                    columnNameSchema["primary_key"] || 
+                    columnNameSchema["foreign_key"])) {
                     if(columnNameSchema["type"] == "bool" || columnNameSchema["type"] == "*bool") {
                         var trueButton =  document.createElement("button");
                         trueButton.setAttribute("id", columName + "_true");
@@ -443,7 +460,7 @@
                             values_changed_count++;
                         }
 
-                        if(record_before[column_name] != new_value || schema_for_column["primary_key"]) {
+                        if(record_before[column_name] != new_value || (schema_for_column["primary_key"] ||  schema_for_column["foreign_key"])) {
                             save_result[column_name] = new_value;
                         }
                     }
@@ -471,7 +488,7 @@
                         var schema_for_column = schema[column_name];
 
                         if(column_name !== "archieved") {
-                            if(!schema_for_column["primary_key"]) {
+                            if(!(schema_for_column["primary_key"] || schema_for_column["foreign_key"])) {
                                 continue;
                             }
                         }
@@ -499,7 +516,7 @@
                             var number_element = document.getElementById(column_name);
                             var new_value = Number.parseInt(number_element.value, 10);
 
-                            if(schema_for_column["primary_key"]) {
+                            if(schema_for_column["primary_key"] || schema_for_column["foreign_key"]) {
                                 save_result[column_name] = new_value;
                             }
                         }
@@ -602,6 +619,21 @@
 
                 for(var i=0; i < non_auto_increment_primary_keys.length; i++) {
                     column_names_sorted.push(non_auto_increment_primary_keys[i]);
+                }
+            }
+
+            {
+                var foreign_keys = [];
+                for(var i=0; i < schema_keys.length; i++) {
+                    var schema_definition = schema[schema_keys[i]];
+                    if(schema_definition["foreign_key"]) {
+                        foreign_keys.push(schema_keys[i]);
+                    }
+                }
+                foreign_keys.sort();
+
+                for(var i=0; i < foreign_keys.length; i++) {
+                    column_names_sorted.push(foreign_keys[i]);
                 }
             }
 
