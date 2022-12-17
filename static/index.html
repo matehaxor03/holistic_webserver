@@ -277,9 +277,7 @@
 
                 if(columName == "last_modified_date" ||
                     columName == "created_date" || 
-                    columName == "archieved_date" ||
-                    columName == "active" || 
-                    columName == "archieved") {
+                    columName == "archieved_date") {
                     continue;
                 }
             } 
@@ -289,18 +287,27 @@
             const label = document.createElement("td");
             const labelText = document.createTextNode(encodeHTMLText(columName));
             label.appendChild(labelText);
-            rowData.appendChild(label)
+            rowData.appendChild(label);
 
             const data = document.createElement("td");
-            if(mode == "view") {
-                const dataText = document.createTextNode(encodeHTMLText(record[columName]));
-                data.appendChild(dataText);
-            } else if(mode == "update" || mode == "create") {
-                if(!(columName == "last_modified_date" ||
+             if(mode == "view" || mode == "update" || mode == "create") {
+                var editable = true;
+
+                if(mode == "view") {
+                    editable = false;
+                }
+
+                if(columName == "last_modified_date" ||
                     columName == "created_date" || 
-                    columName == "archieved_date" || 
-                    columnNameSchema["primary_key"] || 
-                    columnNameSchema["foreign_key"])) {
+                    columName == "archieved_date") {
+                    editable = false;
+                }
+
+                if(columnNameSchema["primary_key"] && columnNameSchema["auto_increment"]){
+                    editable = false;
+                }
+                
+                if(editable) {
                     if(columnNameSchema["type"] == "bool" || columnNameSchema["type"] == "*bool") {
                         var trueButton =  document.createElement("button");
                         trueButton.setAttribute("id", columName + "_true");
@@ -345,7 +352,7 @@
                             falseButton.setAttribute("class", "button enabled");
                             falseButton.setAttribute("disabled", true);
                         }
-                       
+                        
                         data.appendChild(trueButton);
                         data.appendChild(falseButton);
                     } else {
@@ -354,30 +361,43 @@
                             inputData.setAttribute("id", columName);
                             if(mode == "update") {
                                 inputData.value = record[columName];
+                                inputData.setAttribute("value", record[columName]);
                             } else if(mode == "create") {
                                 inputData.value = columnNameSchema["default"];
+                                inputData.setAttribute("value", columnNameSchema["default"]);
                             }
 
                             var key_up_function = function(event) {
                                 var target_column_name = columName;
-                                record[target_column_name] = event.target.value;
+                                var x = function() {
+                                    console.log(target_column_name);
+                                    record[target_column_name] = document.getElementById(target_column_name).value
+                                }
+                                x();
                             }
-                           
+                            
                             inputData.onkeyup = key_up_function;
                             data.appendChild(inputData);
                         }
                     }
-                } else {
+                }
+                else {
                     {
-                        var inputData =  document.createElement("input");
-                            inputData.setAttribute("id", columName);
+                        var inputData = document.createElement("input");
+                        inputData.setAttribute("id", columName);
+                        inputData.setAttribute("disabled", true);
+                        if(mode == "update" || mode == "view") {
                             inputData.setAttribute("value", record[columName]);
-                            inputData.setAttribute("disabled", true);
-                            inputData.setAttribute("style", "border-width:0");
-                            data.appendChild(inputData);
+                            inputData.value = record[columName];
+                        } else if(mode == "create") {
+                            inputData.setAttribute("value", columnNameSchema["default"]);
+                            inputData.value = columnNameSchema["default"];
+                        }
+                        data.appendChild(inputData);
                     }
                 }
             } 
+           
             rowData.appendChild(data);
             table.appendChild(rowData);
         }
@@ -562,7 +582,8 @@
                 redraw_record_page(table_name, mode, result[message_type]["schema"], result[message_type]["data"][0]);
             } else {
                 record_before = {};
-                redraw_record_page(table_name, mode, result[message_type]["data"], null);
+                var new_record = {};
+                redraw_record_page(table_name, mode, result[message_type]["data"], new_record);
             }
 
             console.log(result);
