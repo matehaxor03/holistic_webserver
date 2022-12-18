@@ -22,6 +22,10 @@
     width: 100%;
 }
 
+table {
+    width: 100%;
+}
+
 .button {
   padding: 5px;
   margin-bottom: 5px;
@@ -77,7 +81,7 @@
 <body>
 
 <div class="row">
-  <div id="main" class="col-7 col-s-7"></div>
+  <div id="main" class="col-12 col-s-12"></div>
 </div>
 
 </body>
@@ -89,6 +93,7 @@
         text = text.replaceAll("%20", "\u00A0");
         text = text.replaceAll("%3A", "\u003A");
         text = text.replaceAll("%2F", "\u002F");
+        text = text.replaceAll("%3E", "\u003E");
         return text;
     }
     
@@ -136,16 +141,16 @@
         table_name = table_name.replace(/\\\"/g, "\"");
         var temp_message_type = "";
         if(mode == "update") {
-            temp_message_type = "UpdateRecords_" + decodeURIComponent(table_name);
+            temp_message_type = "UpdateRecord_" + decodeURIComponent(table_name);
         } else if(mode == "create") {
-            temp_message_type = "CreateRecords_" + decodeURIComponent(table_name);
+            temp_message_type = "CreateRecord_" + decodeURIComponent(table_name);
         } else if(mode == "delete") {
-            temp_message_type = "UpdateRecords_" + decodeURIComponent(table_name);
+            temp_message_type = "UpdateRecord_" + decodeURIComponent(table_name);
         }
 
         var params = {};
         params[temp_message_type] = {};
-        params[temp_message_type]["data"]= [result];
+        params[temp_message_type]["data"]= result;
 
         var callback_function = function(result) {
             var message_type = Object.keys(result)[0]
