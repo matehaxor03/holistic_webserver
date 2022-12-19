@@ -118,7 +118,7 @@ table {
                     result = JSON.parse(http.responseText);
                     result[Object.keys(result)[0]]["[http_status]"] = http.status;
                     callback_function(result);
-                    if(result[Object.keys(result)[0]]["[errors]"].length > 0) {
+                    if(result[Object.keys(result)[0]]["[errors]"]) {
                         console.error(JSON.stringify(result));
                     } else {
                         console.log(JSON.stringify(result));
@@ -154,7 +154,7 @@ table {
 
         var callback_function = function(result) {
             var message_type = Object.keys(result)[0]
-            if(result[message_type]["[errors]"].length > 0) {
+            if(result[message_type]["[errors]"]) {
                 return;
             }
             
@@ -290,7 +290,7 @@ table {
             const rowData = document.createElement("tr");
             
             const label = document.createElement("td");
-            const labelText = document.createTextNode(encodeHTMLText(columName));
+            const labelText = document.createTextNode(columName);
             label.appendChild(labelText);
             rowData.appendChild(label);
 
@@ -578,7 +578,7 @@ table {
       
         var callback_function = function(result) {
             var message_type = Object.keys(result)[0]
-            if(result[message_type]["[errors]"].length > 0) {
+            if(result[message_type]["[errors]"]) {
                 return;
             }
 
@@ -616,7 +616,7 @@ table {
 
         var callback_function = function(result) {
             var message_type = Object.keys(result)[0]
-            if(result[message_type]["[errors]"].length > 0) {
+            if(result[message_type]["[errors]"]) {
                 return;
             }
 
@@ -678,7 +678,7 @@ table {
                         for(var j = 0; j < column_names.length; j++) {
                             const currentColumnName = column_names[j];
                             const rowColumnHeader = document.createElement("th");
-                            const rowColumnHeaderText = document.createTextNode(encodeHTMLText(currentColumnName));
+                            const rowColumnHeaderText = document.createTextNode(currentColumnName);
                             rowColumnHeader.appendChild(rowColumnHeaderText);
                             rowHeader.appendChild(rowColumnHeader);
                         }
@@ -698,7 +698,7 @@ table {
                     for(var j = 0; j < column_names.length; j++) {
                         const currentColumnName = column_names[j];
                         const rowColumnData = document.createElement("td");
-                        const rowColumnDataText = document.createTextNode(encodeHTMLText(current_record[currentColumnName]));
+                        const rowColumnDataText = document.createTextNode(current_record[currentColumnName]);
                         rowColumnData.appendChild(rowColumnDataText);
                         rowData.appendChild(rowColumnData);
                         
@@ -774,7 +774,7 @@ table {
         var params = {"GetTableNames":{}};
         var callback_function = function(result) {
             var message_type = Object.keys(result)[0]
-            if(result[message_type]["[errors]"].length > 0) {
+            if(result[message_type]["[errors]"]) {
                 return;
             }
 
