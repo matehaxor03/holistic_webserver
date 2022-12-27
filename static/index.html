@@ -192,12 +192,12 @@ th {
             navigate_to_view_table(table_name);
         }
 
-        var back_button = document.createElement("button");
-        back_button.setAttribute("class", "button");
-        back_button.setAttribute("id", "backRecordButton");
-        var back_button_text = document.createTextNode("back");
-        back_button.appendChild(back_button_text);
-        back_button.onclick = function() {
+        var bottom_back_button = document.createElement("button");
+        bottom_back_button.setAttribute("class", "button");
+        bottom_back_button.setAttribute("id", "backRecordButton");
+        var bottom_back_button_text = document.createTextNode("back");
+        bottom_back_button.appendChild(bottom_back_button_text);
+        bottom_back_button.onclick = function() {
             navigate_to_view_table(table_name);
         }
 
@@ -433,7 +433,7 @@ th {
 
         main_content.appendChild(top_back_button);
         main_content.appendChild(table);
-        main_content.appendChild(back_button);
+        main_content.appendChild(bottom_back_button);
 
 
         if(mode == "update" || mode == "create") {
@@ -578,7 +578,6 @@ th {
                 main_content.appendChild(deleteButton);
             }
         }
-        main_content.appendChild(backButton);
     }
 
     var navigate_to_manage_record = function(table_name, where_clause, mode) {
