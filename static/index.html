@@ -26,12 +26,17 @@ table {
     width: 100%;
 }
 
-td {
-    text-align:left;
+th {
+    color: #ffffff;
 }
 
-th {
-    text-align:left;
+tr:nth-child(even){background-color: #E7E9EB;}
+tr {
+    border-bottom: 1px solid #ddd;
+}
+
+table tr th {
+    background-color: #282A35;
 }
 
 .button {
@@ -294,6 +299,20 @@ th {
         }
 
         const table = document.createElement("table");
+
+        const rowHeader = document.createElement("tr");
+       
+        const atrribute_label = document.createElement("th");
+        const atrribute_label_text = document.createTextNode("attribute");
+        atrribute_label.appendChild(atrribute_label_text);
+
+        const value_label = document.createElement("th");
+        const value_label_text = document.createTextNode("value");
+        value_label.appendChild(value_label_text);
+        
+        rowHeader.appendChild(atrribute_label);
+        rowHeader.appendChild(value_label);
+        table.appendChild(rowHeader);
 
         for(var i = 0; i < column_names_sorted.length; i++) {
             const columName = column_names_sorted[i].split('').join('');
