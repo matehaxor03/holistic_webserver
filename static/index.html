@@ -733,15 +733,58 @@ th {
                         const currentColumnName = column_names[j];
                         const rowColumnData = document.createElement("td");
                         const rowColumnDataText = document.createTextNode(current_record[currentColumnName]);
-                        rowColumnData.appendChild(rowColumnDataText);
+
+                        console.log(schema[currentColumnName]);
+                        if(!(schema[currentColumnName]["primary_key"] || schema[currentColumnName]["foreign_key"])) {
+                            rowColumnData.appendChild(rowColumnDataText);
+                        } else if(schema[currentColumnName]["primary_key"]) {
+                            {
+                                const editButton = document.createElement("a");
+                                editButton.setAttribute("rel", "tag");
+                                editButton.setAttribute("href", "#");
+                                const editButtonText = document.createTextNode(current_record[currentColumnName]);
+                                var edit_function = function (table_name, id) {
+                                    var _table_name = table_name.split('').join('');
+                                    var _id = Object.assign({}, id);
+                                    var x = function() {
+                                        navigate_to_manage_record(_table_name, _id, "update");
+                                    }
+                                    return x;
+                                }
+                                var temp_identifier = {};
+                                temp_identifier[currentColumnName] = current_record[currentColumnName];
+                                editButton.onclick = edit_function(table_name, temp_identifier);
+                                editButton.appendChild(editButtonText);
+                                rowColumnData.appendChild(editButton);
+                            }
+                        } else if(schema[currentColumnName]["foreign_key"]) {
+                            {
+                                const editButton = document.createElement("a");
+                                editButton.setAttribute("rel", "tag");
+                                editButton.setAttribute("href", "#");
+                                const editButtonText = document.createTextNode(current_record[currentColumnName]);
+                                var edit_function = function (table_name, id) {
+                                    var _table_name = table_name.split('').join('');
+                                    var _id = Object.assign({}, id);
+                                    var x = function() {
+                                        navigate_to_manage_record(_table_name, _id, "update");
+                                    }
+                                    return x;
+                                }
+                                var temp_identifier = {};
+                                temp_identifier[currentColumnName] = current_record[currentColumnName];
+                                editButton.onclick = edit_function(schema[currentColumnName]["foreign_key_table_name"], temp_identifier);
+                                editButton.appendChild(editButtonText);
+                                rowColumnData.appendChild(editButton);
+                            }
+                        }
+
                         rowData.appendChild(rowColumnData);
                         
                         if(j < (column_names.length -1)) {
                             identifier[currentColumnName] = current_record[currentColumnName];
                         }
                     }
-                    console.log(identifier);
-
                     const rowColumnData = document.createElement("td");
                     
                     const viewButton = document.createElement("button");
