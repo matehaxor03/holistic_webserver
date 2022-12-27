@@ -26,6 +26,14 @@ table {
     width: 100%;
 }
 
+td {
+    text-align:left;
+}
+
+th {
+    text-align:left;
+}
+
 .button {
   padding: 5px;
   margin-bottom: 5px;
@@ -116,17 +124,19 @@ table {
                 var result = {};
                 try {
                     result = JSON.parse(http.responseText);
-                    result[Object.keys(result)[0]]["[http_status]"] = http.status;
+                    result["[http_status]"] = http.status;
                     callback_function(result);
-                    if(result[Object.keys(result)[0]]["[errors]"]) {
+                    
+                    if(result["[errors]"]) {
                         console.error(JSON.stringify(result));
                     } else {
                         console.log(JSON.stringify(result));
                     }
                 } catch(ex) {
-                    result["unknown"] = {};
-                    result["unknown"]["[errors]"] = [ex.toString()];
-                    result["unknown"]["[http_status]"] = http.status;
+                    result = {};
+                    result["[queue]"] = "unknown"
+                    result["[errors]"] = [ex.toString()];
+                    result["[http_status]"] = http.status;
                     callback_function(result);
                     console.error(JSON.stringify(result));
                 }
@@ -148,13 +158,9 @@ table {
             temp_message_type = "UpdateRecord_" + decodeURIComponent(table_name);
         }
 
-        var params = {};
-        params[temp_message_type] = {};
-        params[temp_message_type]["data"]= result;
-
+        var params = {"[queue]":temp_message_type, "data":result};
         var callback_function = function(result) {
-            var message_type = Object.keys(result)[0]
-            if(result[message_type]["[errors]"]) {
+            if(result["[errors]"]) {
                 return;
             }
             
@@ -176,6 +182,24 @@ table {
         title.appendChild(title_text);
         main_content.appendChild(title);
         document.getElementById("content_heading").focus();
+
+        var top_back_button = document.createElement("button");
+        top_back_button.setAttribute("class", "button");
+        top_back_button.setAttribute("id", "backRecordButton");
+        var top_back_button_text = document.createTextNode("back");
+        top_back_button.appendChild(top_back_button_text);
+        top_back_button.onclick = function() {
+            navigate_to_view_table(table_name);
+        }
+
+        var back_button = document.createElement("button");
+        back_button.setAttribute("class", "button");
+        back_button.setAttribute("id", "backRecordButton");
+        var back_button_text = document.createTextNode("back");
+        back_button.appendChild(back_button_text);
+        back_button.onclick = function() {
+            navigate_to_view_table(table_name);
+        }
 
         //var column_names = Object.keys(record);
         var schema_keys =  Object.keys(schema);
@@ -406,8 +430,11 @@ table {
             rowData.appendChild(data);
             table.appendChild(rowData);
         }
-        
+
+        main_content.appendChild(top_back_button);
         main_content.appendChild(table);
+        main_content.appendChild(back_button);
+
 
         if(mode == "update" || mode == "create") {
             var saveButton = document.createElement("button");
@@ -551,15 +578,6 @@ table {
                 main_content.appendChild(deleteButton);
             }
         }
-
-        var backButton = document.createElement("button");
-        backButton.setAttribute("class", "button");
-        backButton.setAttribute("id", "backRecordButton");
-        var backButtonText = document.createTextNode("back");
-        backButton.appendChild(backButtonText);
-        backButton.onclick = function() {
-            navigate_to_view_table(table_name);
-        }
         main_content.appendChild(backButton);
     }
 
@@ -570,25 +588,24 @@ table {
 
         if(mode !== "create") {
             var temp_message_type = "ReadRecords_" + decodeURIComponent(table_name);
-            params[temp_message_type] = {"[where_fields]":where_clause, "[include_schema]":true};
+            params = {"[queue]":temp_message_type, "[where_fields]":where_clause, "[include_schema]":true};
         } else {
             var temp_message_type = "GetSchema_" + decodeURIComponent(table_name);
-            params[temp_message_type] = {};
+            params = {"[queue]":temp_message_type};
         }
       
         var callback_function = function(result) {
-            var message_type = Object.keys(result)[0]
-            if(result[message_type]["[errors]"]) {
+            if(result["[errors]"]) {
                 return;
             }
 
             if(mode !== "create") {
-                record_before = JSON.parse(JSON.stringify(result[message_type]["data"][0]));
-                redraw_record_page(table_name, mode, result[message_type]["schema"], result[message_type]["data"][0]);
+                record_before = JSON.parse(JSON.stringify(result["data"][0]));
+                redraw_record_page(table_name, mode, result["schema"], result["data"][0]);
             } else {
                 record_before = {};
                 var new_record = {};
-                redraw_record_page(table_name, mode, result[message_type]["data"], new_record);
+                redraw_record_page(table_name, mode, result["data"], new_record);
             }
 
             console.log(result);
@@ -611,19 +628,36 @@ table {
         document.getElementById("content_heading").focus();
 
         var temp_message_type = "ReadRecords_" + decodeURIComponent(table_name);
-        var params = {};
-        params[temp_message_type] = {"[select_fields]":["[minimal_fields]"],"[include_schema]":true};
+        var params = {"[queue]":temp_message_type,"[select_fields]":["[minimal_fields]"],"[include_schema]":true};
 
         var callback_function = function(result) {
             var message_type = Object.keys(result)[0]
-            if(result[message_type]["[errors]"]) {
+            if(result["[errors]"]) {
                 return;
             }
 
-            var payload = result[message_type];
+            const top_back_button = document.createElement("button");
+            top_back_button.setAttribute("class", "button");
+            top_back_button.setAttribute("id", "backRecordButton");
+            var top_back_button_text = document.createTextNode("back");
+            top_back_button.appendChild(top_back_button_text);
+            top_back_button.onclick = function() {
+                navigate_to_home_page();
+            }
+
+            const bottom_back_button = document.createElement("button");
+            bottom_back_button.setAttribute("class", "button");
+            bottom_back_button.setAttribute("id", "backRecordButton");
+            var bottom_back_button_text = document.createTextNode("back");
+            bottom_back_button.appendChild(bottom_back_button_text);
+            bottom_back_button.onclick = function() {
+                navigate_to_home_page();
+            }
+
+            var payload = result;
             var records = payload["data"];
 
-            var schema = result[message_type]["schema"]; 
+            var schema = result["schema"]; 
             var schema_keys =  Object.keys(schema);
             var column_names_sorted = [];
             for(var i=0; i < schema_keys.length; i++) {
@@ -751,18 +785,10 @@ table {
                 navigate_to_manage_record(table_name, null, "create");
             }
 
+            main_content.appendChild(top_back_button);
             main_content.appendChild(createButton);
             main_content.appendChild(table);
-
-            var backButton = document.createElement("button");
-            backButton.setAttribute("class", "button");
-            backButton.setAttribute("id", "backRecordButton");
-            var backButtonText = document.createTextNode("back");
-            backButton.appendChild(backButtonText);
-            backButton.onclick = function() {
-                navigate_to_home_page();
-            }
-            main_content.appendChild(backButton);
+            main_content.appendChild(bottom_back_button);
 
 
             console.log(result);
@@ -771,10 +797,9 @@ table {
     }
 
     load_table_names = function() {
-        var params = {"GetTableNames":{}};
+        var params = {"[queue]": "GetTableNames"};
         var callback_function = function(result) {
-            var message_type = Object.keys(result)[0]
-            if(result[message_type]["[errors]"]) {
+            if(result["[errors]"]) {
                 return;
             }
 
@@ -782,9 +807,9 @@ table {
             removeAllChildElements(leftHandNav);
 
             const span = document.createElement("span");
-            const length = result[message_type]["data"].length
+            const length = result["data"].length
             for(var i = 0; i < length; i++) {
-                var table_name = encodeURIComponent((result[message_type]["data"][i]).replace(/"/g, "\\\""));
+                var table_name = encodeURIComponent((result["data"][i]).replace(/"/g, "\\\""));
                 const button = document.createElement("button");
                 button.setAttribute("onclick", "navigate_to_view_table(\"" + table_name  + "\")");
                 button.setAttribute("class", "button top_menu col-3 col-s-3");
