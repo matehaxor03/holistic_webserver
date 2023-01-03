@@ -62,8 +62,48 @@ func NewWebServer(port string, server_crt_path string, server_key_path string, q
 	}
 	//var this_holisic_queue_server *HolisticQueueServer
 
+	data := json.NewMapValue()
+	data.SetMapValue("[fields]", json.NewMapValue())
+	data.SetMapValue("[schema]", json.NewMapValue())
+
+	map_system_fields := json.NewMapValue()
+	map_system_fields.SetObjectForMap("[port]", port)
+	map_system_fields.SetObjectForMap("[server_crt_path]", server_crt_path)
+	map_system_fields.SetObjectForMap("[server_key_path]", server_key_path)
+	map_system_fields.SetObjectForMap("[queue_port]", queue_port)
+	map_system_fields.SetObjectForMap("[queue_domain_name]", domain_name)
+	data.SetMapValue("[system_fields]", map_system_fields)
+
+	///
+
 	//todo: add filters to fields
-	data := json.Map{
+
+	map_system_schema := json.NewMapValue()
+	
+	map_port := json.NewMapValue()
+	map_port.SetStringValue("type", "string")
+	map_system_schema.SetMapValue("[port]", map_port)
+
+	map_server_crt_path := json.NewMapValue()
+	map_server_crt_path.SetStringValue("type", "string")
+	map_system_schema.SetMapValue("[server_crt_path]", map_server_crt_path)
+
+	map_server_key_path := json.NewMapValue()
+	map_server_key_path.SetStringValue("type", "string")
+	map_system_schema.SetMapValue("[server_key_path]", map_server_key_path)
+
+	map_queue_port := json.NewMapValue()
+	map_queue_port.SetStringValue("type", "string")
+	map_system_schema.SetMapValue("[queue_port]", map_queue_port)
+
+	map_queue_domain_name := json.NewMapValue()
+	map_queue_domain_name.SetStringValue("type", "class.DomainName")
+	map_system_schema.SetMapValue("[queue_domain_name]", map_queue_domain_name)
+
+	data.SetMapValue("[system_schema]", map_system_schema)
+
+	//todo: add filters to fields
+	/*data := json.Map{
 		"[fields]": json.Map{},
 		"[schema]": json.Map{},
 		"[system_fields]": json.Map{
@@ -80,7 +120,7 @@ func NewWebServer(port string, server_crt_path string, server_key_path string, q
 			"[queue_port]": json.Map{"type":"string"},
 			"[queue_domain_name]": json.Map{"type":"class.DomainName"},
 		},
-	}
+	}*/
 
 	getData := func() *json.Map {
 		return &data
@@ -185,7 +225,7 @@ func NewWebServer(port string, server_crt_path string, server_key_path string, q
 			return
 		}
 
-		json_payload, json_payload_errors := json.ParseJSON(string(body_payload))
+		json_payload, json_payload_errors := json.Parse(string(body_payload))
 
 		if json_payload_errors != nil {
 			process_request_errors = append(process_request_errors, json_payload_errors...)
