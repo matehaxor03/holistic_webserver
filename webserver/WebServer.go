@@ -5,16 +5,15 @@ import (
 	"fmt"
 	"strings"
 	"io/ioutil"
-	//"encoding/json"
 	"time"
 	"bytes"
 	"crypto/tls"
 	"sync"
 	"crypto/rand"
-	class "github.com/matehaxor03/holistic_db_client/class"
+	dao "github.com/matehaxor03/holistic_db_client/dao"
+	helper "github.com/matehaxor03/holistic_db_client/helper"
 	json "github.com/matehaxor03/holistic_json/json"
 	http_extension "github.com/matehaxor03/holistic_http/http_extension"
-
 )
 
 type WebServer struct {
@@ -44,7 +43,7 @@ func NewWebServer(port string, server_crt_path string, server_key_path string, q
 		Transport: transport_config,
 	}
 
-	domain_name, domain_name_errors := class.NewDomainName(queue_domain_name)
+	domain_name, domain_name_errors := dao.NewDomainName(queue_domain_name)
 	if domain_name_errors != nil {
 		errors = append(errors, domain_name_errors...)
 	}
@@ -71,7 +70,7 @@ func NewWebServer(port string, server_crt_path string, server_key_path string, q
 	map_system_fields.SetObjectForMap("[server_crt_path]", server_crt_path)
 	map_system_fields.SetObjectForMap("[server_key_path]", server_key_path)
 	map_system_fields.SetObjectForMap("[queue_port]", queue_port)
-	map_system_fields.SetObjectForMap("[queue_domain_name]", domain_name)
+	map_system_fields.SetObjectForMap("[queue_domain_name]", *domain_name)
 	data.SetMapValue("[system_fields]", map_system_fields)
 
 	///
@@ -97,37 +96,17 @@ func NewWebServer(port string, server_crt_path string, server_key_path string, q
 	map_system_schema.SetMapValue("[queue_port]", map_queue_port)
 
 	map_queue_domain_name := json.NewMapValue()
-	map_queue_domain_name.SetStringValue("type", "class.DomainName")
+	map_queue_domain_name.SetStringValue("type", "dao.DomainName")
 	map_system_schema.SetMapValue("[queue_domain_name]", map_queue_domain_name)
 
 	data.SetMapValue("[system_schema]", map_system_schema)
-
-	//todo: add filters to fields
-	/*data := json.Map{
-		"[fields]": json.Map{},
-		"[schema]": json.Map{},
-		"[system_fields]": json.Map{
-			"[port]":&port,
-			"[server_crt_path]":&server_crt_path,
-			"[server_key_path]":&server_key_path,
-			"[queue_port]":&queue_port,
-			"[queue_domain_name]":domain_name,	
-		},
-		"[system_schema]":json.Map{
-			"[port]": json.Map{"type":"string"},
-			"[server_crt_path]": json.Map{"type":"string"},
-			"[server_key_path]": json.Map{"type":"string"},
-			"[queue_port]": json.Map{"type":"string"},
-			"[queue_domain_name]": json.Map{"type":"class.DomainName"},
-		},
-	}*/
 
 	getData := func() *json.Map {
 		return &data
 	}
 
 	getPort := func() (string, []error) {
-		temp_value, temp_value_errors := class.GetField(struct_type, getData(), "[system_schema]", "[system_fields]", "[port]", "string")
+		temp_value, temp_value_errors := helper.GetField(struct_type, getData(), "[system_schema]", "[system_fields]", "[port]", "string")
 		if temp_value_errors != nil {
 			return "",temp_value_errors
 		}
@@ -135,7 +114,7 @@ func NewWebServer(port string, server_crt_path string, server_key_path string, q
 	}
 
 	getServerCrtPath := func() (string, []error) {
-		temp_value, temp_value_errors := class.GetField(struct_type, getData(), "[system_schema]", "[system_fields]", "[server_crt_path]", "string")
+		temp_value, temp_value_errors := helper.GetField(struct_type, getData(), "[system_schema]", "[system_fields]", "[server_crt_path]", "string")
 		if temp_value_errors != nil {
 			return "",temp_value_errors
 		}
@@ -143,7 +122,7 @@ func NewWebServer(port string, server_crt_path string, server_key_path string, q
 	}
 
 	getServerKeyPath := func() (string, []error) {
-		temp_value, temp_value_errors := class.GetField(struct_type, getData(), "[system_schema]", "[system_fields]", "[server_key_path]", "string")
+		temp_value, temp_value_errors := helper.GetField(struct_type, getData(), "[system_schema]", "[system_fields]", "[server_key_path]", "string")
 		if temp_value_errors != nil {
 			return "",temp_value_errors
 		}
@@ -151,21 +130,19 @@ func NewWebServer(port string, server_crt_path string, server_key_path string, q
 	}
 
 	getQueuePort := func() (string, []error) {
-		temp_value, temp_value_errors := class.GetField(struct_type, getData(), "[system_schema]", "[system_fields]", "[queue_port]", "string")
+		temp_value, temp_value_errors := helper.GetField(struct_type, getData(), "[system_schema]", "[system_fields]", "[queue_port]", "string")
 		if temp_value_errors != nil {
 			return "", temp_value_errors
 		}
 		return temp_value.(string), nil
 	}
 
-	getQueueDomainName := func() (*class.DomainName, []error) {
-		temp_value, temp_value_errors := class.GetField(struct_type, getData(), "[system_schema]", "[system_fields]", "[queue_domain_name]", "*class.DomainName")
+	getQueueDomainName := func() (dao.DomainName, []error) {
+		temp_value, temp_value_errors := helper.GetField(struct_type, getData(), "[system_schema]", "[system_fields]", "[queue_domain_name]", "dao.DomainName")
 		if temp_value_errors != nil {
-			return nil,temp_value_errors
-		} else if temp_value == nil {
-			return nil, nil
+			return dao.DomainName{},temp_value_errors
 		}
-		return temp_value.(*class.DomainName), nil
+		return temp_value.(dao.DomainName), nil
 	}
 
 	queue_domain_name_object, queue_domain_name_object_errors := getQueueDomainName()
@@ -186,18 +163,8 @@ func NewWebServer(port string, server_crt_path string, server_key_path string, q
 	queue_url := fmt.Sprintf("https://%s:%s/", queue_domain_name_object_value, queue_port_value)
 
 	validate := func() []error {
-		return class.ValidateData(getData(), struct_type)
+		return dao.ValidateData(getData(), struct_type)
 	}
-
-	/*
-	setHolisticQueueServer := func(holisic_queue_server *HolisticQueueServer) {
-		this_holisic_queue_server = holisic_queue_server
-	}*/
-
-	/*
-	getHolisticQueueServer := func() *HolisticQueueServer {
-		return this_holisic_queue_server
-	}*/
 
 	processRequest := func(w http.ResponseWriter, req *http.Request) {
 		var process_request_errors []error
