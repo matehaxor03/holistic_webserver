@@ -14,6 +14,8 @@ import (
 	helper "github.com/matehaxor03/holistic_db_client/helper"
 	json "github.com/matehaxor03/holistic_json/json"
 	http_extension "github.com/matehaxor03/holistic_http/http_extension"
+	validate "github.com/matehaxor03/holistic_db_client/validate"
+
 )
 
 type WebServer struct {
@@ -21,7 +23,7 @@ type WebServer struct {
 }
 
 func NewWebServer(port string, server_crt_path string, server_key_path string, queue_domain_name string, queue_port string) (*WebServer, []error) {
-	struct_type := "*webserver.WebServer"
+	verfiy := validate.NewValidator()
 	var errors []error
 	var trace_id_lock sync.Mutex
 	var messageCount uint64
@@ -43,7 +45,7 @@ func NewWebServer(port string, server_crt_path string, server_key_path string, q
 		Transport: transport_config,
 	}
 
-	domain_name, domain_name_errors := dao.NewDomainName(queue_domain_name)
+	domain_name, domain_name_errors := dao.NewDomainName(verfiy, queue_domain_name)
 	if domain_name_errors != nil {
 		errors = append(errors, domain_name_errors...)
 	}
@@ -106,7 +108,7 @@ func NewWebServer(port string, server_crt_path string, server_key_path string, q
 	}
 
 	getPort := func() (string, []error) {
-		temp_value, temp_value_errors := helper.GetField(struct_type, getData(), "[system_schema]", "[system_fields]", "[port]", "string")
+		temp_value, temp_value_errors := helper.GetField(*getData(), "[system_schema]", "[system_fields]", "[port]", "string")
 		if temp_value_errors != nil {
 			return "",temp_value_errors
 		}
@@ -114,7 +116,7 @@ func NewWebServer(port string, server_crt_path string, server_key_path string, q
 	}
 
 	getServerCrtPath := func() (string, []error) {
-		temp_value, temp_value_errors := helper.GetField(struct_type, getData(), "[system_schema]", "[system_fields]", "[server_crt_path]", "string")
+		temp_value, temp_value_errors := helper.GetField(*getData(), "[system_schema]", "[system_fields]", "[server_crt_path]", "string")
 		if temp_value_errors != nil {
 			return "",temp_value_errors
 		}
@@ -122,7 +124,7 @@ func NewWebServer(port string, server_crt_path string, server_key_path string, q
 	}
 
 	getServerKeyPath := func() (string, []error) {
-		temp_value, temp_value_errors := helper.GetField(struct_type, getData(), "[system_schema]", "[system_fields]", "[server_key_path]", "string")
+		temp_value, temp_value_errors := helper.GetField(*getData(), "[system_schema]", "[system_fields]", "[server_key_path]", "string")
 		if temp_value_errors != nil {
 			return "",temp_value_errors
 		}
@@ -130,7 +132,7 @@ func NewWebServer(port string, server_crt_path string, server_key_path string, q
 	}
 
 	getQueuePort := func() (string, []error) {
-		temp_value, temp_value_errors := helper.GetField(struct_type, getData(), "[system_schema]", "[system_fields]", "[queue_port]", "string")
+		temp_value, temp_value_errors := helper.GetField(*getData(), "[system_schema]", "[system_fields]", "[queue_port]", "string")
 		if temp_value_errors != nil {
 			return "", temp_value_errors
 		}
@@ -138,7 +140,7 @@ func NewWebServer(port string, server_crt_path string, server_key_path string, q
 	}
 
 	getQueueDomainName := func() (dao.DomainName, []error) {
-		temp_value, temp_value_errors := helper.GetField(struct_type, getData(), "[system_schema]", "[system_fields]", "[queue_domain_name]", "dao.DomainName")
+		temp_value, temp_value_errors := helper.GetField(*getData(), "[system_schema]", "[system_fields]", "[queue_domain_name]", "dao.DomainName")
 		if temp_value_errors != nil {
 			return dao.DomainName{},temp_value_errors
 		}
@@ -150,11 +152,8 @@ func NewWebServer(port string, server_crt_path string, server_key_path string, q
 		return nil, queue_domain_name_object_errors
 	}
 
-	queue_domain_name_object_value, queue_domain_name_object_value_errors := queue_domain_name_object.GetDomainName()
-	if queue_domain_name_object_value_errors != nil {
-		return nil, queue_domain_name_object_value_errors
-	}
-
+	queue_domain_name_object_value := queue_domain_name_object.GetDomainName()
+	
 	queue_port_value, queue_port_value_errors := getQueuePort()
 	if queue_port_value_errors != nil {
 		return nil, queue_port_value_errors
@@ -163,7 +162,7 @@ func NewWebServer(port string, server_crt_path string, server_key_path string, q
 	queue_url := fmt.Sprintf("https://%s:%s/", queue_domain_name_object_value, queue_port_value)
 
 	validate := func() []error {
-		return dao.ValidateData(getData(), struct_type)
+		return dao.ValidateData(getData(), "Webserver")
 	}
 
 	processRequest := func(w http.ResponseWriter, req *http.Request) {
