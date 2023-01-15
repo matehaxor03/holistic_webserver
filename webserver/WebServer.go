@@ -159,7 +159,7 @@ func NewWebServer(port string, server_crt_path string, server_key_path string, q
 		return nil, queue_port_value_errors
 	}
 
-	queue_url := fmt.Sprintf("https://%s:%s/", queue_domain_name_object_value, queue_port_value)
+	queue_url := fmt.Sprintf("https://%s:%s/queue_api", queue_domain_name_object_value, queue_port_value)
 
 	validate := func() []error {
 		return dao.ValidateData(getData(), "Webserver")
