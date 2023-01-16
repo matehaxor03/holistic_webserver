@@ -169,7 +169,7 @@ func NewWebServer(queue_push_back_function (*func(string,*json.Map) (*json.Map, 
 	processRequest := func(w http.ResponseWriter, req *http.Request) {
 		var process_request_errors []error
 		var response_payload_result string
-		result := json.Map{}
+		result := json.NewMap()
 		if !(req.Method == "POST" || req.Method == "PATCH" || req.Method == "PUT") {
 			process_request_errors = append(process_request_errors, fmt.Errorf("http request method not supported: %s", req.Method))
 		}
