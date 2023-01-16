@@ -12,6 +12,7 @@ import (
 	"crypto/rand"
 	dao "github.com/matehaxor03/holistic_db_client/dao"
 	helper "github.com/matehaxor03/holistic_db_client/helper"
+	common "github.com/matehaxor03/holistic_common/common"
 	json "github.com/matehaxor03/holistic_json/json"
 	http_extension "github.com/matehaxor03/holistic_http/http_extension"
 	validate "github.com/matehaxor03/holistic_db_client/validate"
@@ -22,7 +23,7 @@ type WebServer struct {
 	Start      			func() ([]error)
 }
 
-func NewWebServer(port string, server_crt_path string, server_key_path string, queue_domain_name string, queue_port string) (*WebServer, []error) {
+func NewWebServer(queue_push_back_function (*func(string,*json.Map) (*json.Map, []error)), port string, server_crt_path string, server_key_path string, queue_domain_name string, queue_port string) (*WebServer, []error) {
 	verfiy := validate.NewValidator()
 	var errors []error
 	var trace_id_lock sync.Mutex
@@ -167,6 +168,7 @@ func NewWebServer(port string, server_crt_path string, server_key_path string, q
 
 	processRequest := func(w http.ResponseWriter, req *http.Request) {
 		var process_request_errors []error
+		var response_payload_result string
 		result := json.Map{}
 		if !(req.Method == "POST" || req.Method == "PATCH" || req.Method == "PUT") {
 			process_request_errors = append(process_request_errors, fmt.Errorf("http request method not supported: %s", req.Method))
@@ -208,54 +210,101 @@ func NewWebServer(port string, server_crt_path string, server_key_path string, q
 
 		trace_id := get_trace_id()
 		json_payload.SetString("[trace_id]", &trace_id)
-	
 
-		var json_payload_builder strings.Builder
-		payload_as_string_errors := json_payload.ToJSONString(&json_payload_builder)
-		if payload_as_string_errors != nil {
-			process_request_errors = append(process_request_errors, payload_as_string_errors...)
+
+		if queue_push_back_function != nil {
+			queue, queue_errors := json_payload.GetString("[queue]")
+			if queue_errors != nil {
+				process_request_errors = append(process_request_errors, queue_errors...)
+			} else if common.IsNil(queue) {
+				process_request_errors = append(process_request_errors, fmt.Errorf("queue is nil"))
+			}
+
+			queue_mode, queue_mode_errors := json_payload.GetString("[queue_mode]")
+			if queue_mode_errors != nil {
+				process_request_errors = append(process_request_errors, queue_mode_errors...)
+			} else if common.IsNil(queue_mode) {
+				temp_queue_mode := "PushBack"
+				queue_mode = &temp_queue_mode
+				json_payload.SetString("[queue_mode]", queue_mode)
+			}
+
+			async, async_errors := json_payload.GetBool("[async]")
+			if async_errors != nil {
+				process_request_errors = append(process_request_errors, async_errors...)
+			} else if common.IsNil(async) {
+				temp_async := false
+				async = &temp_async
+				json_payload.SetBool("[async]", async)
+			}
+
+			if len(process_request_errors) == 0 {
+				function_response_payload, function_response_payload_errors := (*queue_push_back_function)(*queue, json_payload)
+				if function_response_payload_errors != nil {
+					process_request_errors = append(process_request_errors, function_response_payload_errors...)
+				} else if common.IsNil(function_response_payload) {
+					process_request_errors = append(process_request_errors, fmt.Errorf("function_response_payload is nil"))
+				} else {
+					var function_builder strings.Builder 
+					to_json_string_errors := function_response_payload.ToJSONString(&function_builder)
+					if to_json_string_errors != nil {
+						process_request_errors = append(process_request_errors, to_json_string_errors...)
+					} else {
+						response_payload_result = function_builder.String()
+					}
+				}
+			}
+		} else {
+			var json_payload_builder strings.Builder
+			payload_as_string_errors := json_payload.ToJSONString(&json_payload_builder)
+			if payload_as_string_errors != nil {
+				process_request_errors = append(process_request_errors, payload_as_string_errors...)
+			}
+
+			if len(process_request_errors) > 0 {
+				http_extension.WriteResponse(w, result, process_request_errors)
+				return
+			}
+
+			json_bytes := []byte(json_payload_builder.String())
+			json_reader := bytes.NewReader(json_bytes)
+
+			request, request_error := http.NewRequest(http.MethodPost, queue_url, json_reader)
+			if request_error != nil {
+				process_request_errors = append(process_request_errors, request_error)
+			}
+
+			if len(process_request_errors) > 0 {
+				http_extension.WriteResponse(w, result, process_request_errors)
+				return
+			}
+
+			request.Header.Set("Content-Type", "application/json")
+			http_response, http_response_error := http_client.Do(request)
+			if http_response_error != nil {
+				process_request_errors = append(process_request_errors, http_response_error)
+			} 
+
+			if len(process_request_errors) > 0 {
+				http_extension.WriteResponse(w, result, process_request_errors)
+				return
+			}
+
+			response_payload, response_payload_error := ioutil.ReadAll(http_response.Body);
+			if response_payload_error != nil {
+				process_request_errors = append(process_request_errors, response_payload_error)
+			} else if common.IsNil(response_payload) {
+				process_request_errors = append(process_request_errors, fmt.Errorf("response_payload is nil"))
+			} else {
+				response_payload_result = string(response_payload)
+			}
 		}
 
 		if len(process_request_errors) > 0 {
 			http_extension.WriteResponse(w, result, process_request_errors)
-			return
+		} else {
+			w.Write([]byte(response_payload_result))
 		}
-
-		json_bytes := []byte(json_payload_builder.String())
-		json_reader := bytes.NewReader(json_bytes)
-
-		request, request_error := http.NewRequest(http.MethodPost, queue_url, json_reader)
-		if request_error != nil {
-			process_request_errors = append(process_request_errors, request_error)
-		}
-
-		if len(process_request_errors) > 0 {
-			http_extension.WriteResponse(w, result, process_request_errors)
-			return
-		}
-
-		request.Header.Set("Content-Type", "application/json")
-		http_response, http_response_error := http_client.Do(request)
-		if http_response_error != nil {
-			process_request_errors = append(process_request_errors, http_response_error)
-		} 
-
-		if len(process_request_errors) > 0 {
-			http_extension.WriteResponse(w, result, process_request_errors)
-			return
-		}
-
-		response_payload, response_payload_error := ioutil.ReadAll(http_response.Body);
-		if response_payload_error != nil {
-			process_request_errors = append(process_request_errors, response_payload_error)
-		}
-
-		if len(process_request_errors) > 0 {
-			http_extension.WriteResponse(w, result, process_request_errors)
-			return
-		}
-
-		w.Write([]byte(response_payload))
 	}
 
 	x := WebServer{
