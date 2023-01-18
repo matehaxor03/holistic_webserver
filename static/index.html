@@ -100,7 +100,7 @@ table tr th {
 </body>
 
 <script>
-    var url = 'https://' + location.hostname + ':5001/api';
+    var url = 'https://' + location.hostname + ':5001/webserver_api';
     var encodeHTMLText = function(text) {
         text = encodeURIComponent(text);
         text = text.replaceAll("%20", "\u00A0");
@@ -123,6 +123,11 @@ table tr th {
     }
 
     var send_http_request = function(params, callback_function) {
+        if(!params["[queue]"]) {
+            console.error("params did not have [queue]: " + JSON.stringify(params));
+            return
+        }
+
         var http = new XMLHttpRequest();
         http.onreadystatechange = function() { 
             if (http.readyState == 4) {
@@ -147,7 +152,7 @@ table tr th {
                 }
             }
         }
-        http.open('POST', url, true);
+        http.open('POST', url + "/" + params["[queue]"], true);
         http.setRequestHeader('Content-Type', 'application/json');
         http.send(JSON.stringify(params));
     }

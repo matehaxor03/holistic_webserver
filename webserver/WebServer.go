@@ -1,343 +1,174 @@
 package queue
 
 import (
-	"net/http"
 	"fmt"
-	"strings"
-	"io/ioutil"
-	"time"
-	"bytes"
-	"crypto/tls"
 	"sync"
-	"crypto/rand"
 	dao "github.com/matehaxor03/holistic_db_client/dao"
-	helper "github.com/matehaxor03/holistic_db_client/helper"
 	common "github.com/matehaxor03/holistic_common/common"
-	json "github.com/matehaxor03/holistic_json/json"
-	http_extension "github.com/matehaxor03/holistic_http/http_extension"
 	validate "github.com/matehaxor03/holistic_db_client/validate"
-
+	"net/http"
 )
 
 type WebServer struct {
 	Start      			func() ([]error)
 }
 
-func NewWebServer(queue_push_back_function (*func(string,*json.Map) (*json.Map, []error)), port string, server_crt_path string, server_key_path string, queue_domain_name string, queue_port string) (*WebServer, []error) {
+func NewWebServer(port string, server_crt_path string, server_key_path string, queue_domain_name string, queue_port string) (*WebServer, []error) {
 	verfiy := validate.NewValidator()
+	get_controller_by_name_lock := &sync.RWMutex{}
 	var errors []error
-	var trace_id_lock sync.Mutex
-	var messageCount uint64
 
-
-	generate_guid := func() string {
-		byte_array := make([]byte, 16)
-		rand.Read(byte_array)
-		guid := fmt.Sprintf("%X-%X-%X-%X-%X", byte_array[0:4], byte_array[4:6], byte_array[6:8], byte_array[8:10], byte_array[10:])
-		return guid
+	client_manager, client_manager_errors := dao.NewClientManager()
+	if client_manager_errors != nil {
+		return nil, client_manager_errors
 	}
 
-	transport_config := &http.Transport{
-		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+	test_read_client, test_read_client_errors := client_manager.GetClient("127.0.0.1", "3306", "holistic", "holistic_r")
+	if test_read_client_errors != nil {
+		return nil, test_read_client_errors
 	}
 
-	http_client := http.Client{
-		Timeout: 120 * time.Second,
-		Transport: transport_config,
+	getQueuePort := func() string {
+		return queue_port
 	}
 
-	domain_name, domain_name_errors := dao.NewDomainName(verfiy, queue_domain_name)
+	getQueueDomainName := func() string {
+		return queue_domain_name
+	}
+	
+	test_read_database := test_read_client.GetDatabase()
+
+	controllers := make(map[string](*WebServerController))
+	table_names, table_names_errors := test_read_database.GetTableNames()
+	if table_names_errors != nil {
+		return nil, table_names_errors
+	}
+
+	controllers["Run_Sync"], _ = NewWebServerController("Run_Sync", queue_domain_name, getQueuePort())
+
+	for _, table_name := range table_names {
+		controllers["CreateRecords_"+table_name], _ = NewWebServerController("CreateRecords_"+table_name, getQueueDomainName(), getQueuePort())
+		controllers["CreateRecord_"+table_name], _ = NewWebServerController("CreateRecord_"+table_name, getQueueDomainName(), getQueuePort())
+		controllers["ReadRecords_"+table_name], _ = NewWebServerController("ReadRecords_"+table_name, getQueueDomainName(), getQueuePort())
+		controllers["UpdateRecords_"+table_name], _ = NewWebServerController("UpdateRecords_"+table_name, getQueueDomainName(), getQueuePort())
+		controllers["UpdateRecord_"+table_name], _ = NewWebServerController("UpdateRecord_"+table_name, getQueueDomainName(), getQueuePort())
+		controllers["CreateRecords_"+table_name], _ = NewWebServerController("CreateRecords_"+table_name, getQueueDomainName(), getQueuePort())
+		controllers["DeleteRecords_"+table_name], _ = NewWebServerController("DeleteRecords_"+table_name, getQueueDomainName(), getQueuePort())
+		controllers["GetSchema_"+table_name], _ = NewWebServerController("GetSchema_"+table_name, getQueueDomainName(), getQueuePort())
+	}
+
+	controllers["Run_StartBuildBranchInstance"], _ = NewWebServerController("Run_StartBuildBranchInstance", getQueueDomainName(), getQueuePort())
+	controllers["Run_NotStarted"], _ = NewWebServerController("Run_NotStarted", getQueueDomainName(), getQueuePort())
+	controllers["Run_Start"], _ = NewWebServerController("Run_Start", getQueueDomainName(), getQueuePort())
+	controllers["Run_CreateSourceFolder"], _ = NewWebServerController("Run_CreateSourceFolder", getQueueDomainName(), getQueuePort())
+	controllers["Run_CreateDomainNameFolder"], _ = NewWebServerController("Run_CreateDomainNameFolder", getQueueDomainName(), getQueuePort())
+	controllers["Run_CreateRepositoryAccountFolder"], _ = NewWebServerController("Run_CreateRepositoryAccountFolder", getQueueDomainName(), getQueuePort())
+	controllers["Run_CreateRepositoryFolder"], _ = NewWebServerController("Run_CreateRepositoryFolder", getQueueDomainName(), getQueuePort())
+	controllers["Run_CreateBranchesFolder"], _ = NewWebServerController("Run_CreateBranchesFolder", getQueueDomainName(), getQueuePort())
+	controllers["Run_CreateTagsFolder"], _ = NewWebServerController("Run_CreateTagsFolder", getQueueDomainName(), getQueuePort())
+	controllers["Run_CreateBranchInstancesFolder"], _ = NewWebServerController("Run_CreateBranchInstancesFolder", getQueueDomainName(), getQueuePort())
+	controllers["Run_CreateTagInstancesFolder"], _ = NewWebServerController("Run_CreateTagInstancesFolder", getQueueDomainName(), getQueuePort())
+	controllers["Run_CreateBranchOrTagFolder"], _ = NewWebServerController("Run_CreateBranchOrTagFolder", getQueueDomainName(), getQueuePort())
+	controllers["Run_CloneBranchOrTagFolder"], _ = NewWebServerController("Run_CloneBranchOrTagFolder", getQueueDomainName(), getQueuePort())
+	controllers["Run_PullLatestBranchOrTagFolder"], _ = NewWebServerController("Run_PullLatestBranchOrTagFolder", getQueueDomainName(), getQueuePort())
+	controllers["Run_CreateInstanceFolder"], _ = NewWebServerController("Run_CreateInstanceFolder", getQueueDomainName(), getQueuePort())
+	controllers["Run_CopyToInstanceFolder"], _ = NewWebServerController("Run_CopyToInstanceFolder", getQueueDomainName(), getQueuePort())
+	controllers["Run_CreateGroup"], _ = NewWebServerController("Run_CreateGroup", getQueueDomainName(), getQueuePort())
+	controllers["Run_CreateUser"], _ = NewWebServerController("Run_CreateUser", getQueueDomainName(), getQueuePort())
+	controllers["Run_AssignGroupToUser"], _ = NewWebServerController("Run_AssignGroupToUser", getQueueDomainName(), getQueuePort())
+	controllers["Run_AssignGroupToInstanceFolder"], _ = NewWebServerController("Run_AssignGroupToInstanceFolder", getQueueDomainName(), getQueuePort())
+	controllers["Run_Clean"], _ = NewWebServerController("Run_Clean", getQueueDomainName(), getQueuePort())
+	controllers["Run_Lint"], _ = NewWebServerController("Run_Lint", getQueueDomainName(), getQueuePort())
+	controllers["Run_Build"], _ = NewWebServerController("Run_Build", getQueueDomainName(), getQueuePort())
+	controllers["Run_UnitTests"], _ = NewWebServerController("Run_UnitTests", getQueueDomainName(), getQueuePort())
+	controllers["Run_IntegrationTests"], _ = NewWebServerController("Run_IntegrationTests", getQueueDomainName(), getQueuePort())
+	controllers["Run_IntegrationTestSuite"], _ = NewWebServerController("Run_IntegrationTestSuite", getQueueDomainName(), getQueuePort())
+	controllers["Run_RemoveGroupFromInstanceFolder"], _ = NewWebServerController("Run_RemoveGroupFromInstanceFolder", getQueueDomainName(), getQueuePort())
+	controllers["Run_RemoveGroupFromUser"], _ = NewWebServerController("Run_RemoveGroupFromUser", getQueueDomainName(), getQueuePort())
+	controllers["Run_DeleteGroup"], _ = NewWebServerController("Run_DeleteGroup", getQueueDomainName(), getQueuePort())
+	controllers["Run_DeleteUser"], _ = NewWebServerController("Run_DeleteUser", getQueueDomainName(), getQueuePort())
+	controllers["Run_DeleteInstanceFolder"], _ = NewWebServerController("Run_DeleteInstanceFolder", getQueueDomainName(), getQueuePort())
+	controllers["Run_End"], _ = NewWebServerController("Run_End", getQueueDomainName(), getQueuePort())
+
+	controllers["GetTableNames"], _ = NewWebServerController("GetTableNames", getQueueDomainName(), getQueuePort())
+
+	_, domain_name_errors := dao.NewDomainName(verfiy, queue_domain_name)
 	if domain_name_errors != nil {
 		errors = append(errors, domain_name_errors...)
 	}
 
-	incrementMessageCount := func() uint64 {
-		messageCount++
-		return messageCount
+	get_controller_by_name := func(contoller_name string) (*WebServerController, error) {
+		get_controller_by_name_lock.Lock()
+		defer get_controller_by_name_lock.Unlock()
+		queue_obj, queue_found := controllers[contoller_name]
+		if !queue_found {
+			return nil, fmt.Errorf("queue not found %s", contoller_name)
+		} else if common.IsNil(queue_obj) {
+			return nil, fmt.Errorf("queue found but is nil %s", contoller_name)
+		} 
+		return queue_obj, nil
 	}
-
-	get_trace_id := func() string {
-		trace_id_lock.Lock()
-		defer trace_id_lock.Unlock()
-		trace_id := fmt.Sprintf("%v-%s-%d", time.Now().UnixNano(), generate_guid(), incrementMessageCount())
-		return trace_id
+	
+	get_controller_names := func() []string {
+		get_controller_by_name_lock.Lock()
+		defer get_controller_by_name_lock.Unlock()
+		controller_names := make([]string, len(controllers))
+		for key, _ := range controllers {
+			controller_names = append(controller_names, key)
+		}
+		return controller_names
 	}
 	//var this_holisic_queue_server *HolisticQueueServer
 
-	data := json.NewMapValue()
-	data.SetMapValue("[fields]", json.NewMapValue())
-	data.SetMapValue("[schema]", json.NewMapValue())
-
-	map_system_fields := json.NewMapValue()
-	map_system_fields.SetObjectForMap("[port]", port)
-	map_system_fields.SetObjectForMap("[server_crt_path]", server_crt_path)
-	map_system_fields.SetObjectForMap("[server_key_path]", server_key_path)
-	map_system_fields.SetObjectForMap("[queue_port]", queue_port)
-	map_system_fields.SetObjectForMap("[queue_domain_name]", *domain_name)
-	data.SetMapValue("[system_fields]", map_system_fields)
-
-	///
-
 	//todo: add filters to fields
 
-	map_system_schema := json.NewMapValue()
+	getPort := func() string {
+		return port
+	}
+
+	getServerCrtPath := func() string {
+		return server_crt_path
+	}
+
+	getServerKeyPath := func() string {
+		return server_key_path
+	}
+
 	
-	map_port := json.NewMapValue()
-	map_port.SetStringValue("type", "string")
-	map_system_schema.SetMapValue("[port]", map_port)
-
-	map_server_crt_path := json.NewMapValue()
-	map_server_crt_path.SetStringValue("type", "string")
-	map_system_schema.SetMapValue("[server_crt_path]", map_server_crt_path)
-
-	map_server_key_path := json.NewMapValue()
-	map_server_key_path.SetStringValue("type", "string")
-	map_system_schema.SetMapValue("[server_key_path]", map_server_key_path)
-
-	map_queue_port := json.NewMapValue()
-	map_queue_port.SetStringValue("type", "string")
-	map_system_schema.SetMapValue("[queue_port]", map_queue_port)
-
-	map_queue_domain_name := json.NewMapValue()
-	map_queue_domain_name.SetStringValue("type", "dao.DomainName")
-	map_system_schema.SetMapValue("[queue_domain_name]", map_queue_domain_name)
-
-	data.SetMapValue("[system_schema]", map_system_schema)
-
-	getData := func() *json.Map {
-		return &data
-	}
-
-	getPort := func() (string, []error) {
-		temp_value, temp_value_errors := helper.GetField(*getData(), "[system_schema]", "[system_fields]", "[port]", "string")
-		if temp_value_errors != nil {
-			return "",temp_value_errors
-		}
-		return temp_value.(string), nil
-	}
-
-	getServerCrtPath := func() (string, []error) {
-		temp_value, temp_value_errors := helper.GetField(*getData(), "[system_schema]", "[system_fields]", "[server_crt_path]", "string")
-		if temp_value_errors != nil {
-			return "",temp_value_errors
-		}
-		return temp_value.(string), nil
-	}
-
-	getServerKeyPath := func() (string, []error) {
-		temp_value, temp_value_errors := helper.GetField(*getData(), "[system_schema]", "[system_fields]", "[server_key_path]", "string")
-		if temp_value_errors != nil {
-			return "",temp_value_errors
-		}
-		return temp_value.(string), nil
-	}
-
-	getQueuePort := func() (string, []error) {
-		temp_value, temp_value_errors := helper.GetField(*getData(), "[system_schema]", "[system_fields]", "[queue_port]", "string")
-		if temp_value_errors != nil {
-			return "", temp_value_errors
-		}
-		return temp_value.(string), nil
-	}
-
-	getQueueDomainName := func() (dao.DomainName, []error) {
-		temp_value, temp_value_errors := helper.GetField(*getData(), "[system_schema]", "[system_fields]", "[queue_domain_name]", "dao.DomainName")
-		if temp_value_errors != nil {
-			return dao.DomainName{},temp_value_errors
-		}
-		return temp_value.(dao.DomainName), nil
-	}
-
-	queue_domain_name_object, queue_domain_name_object_errors := getQueueDomainName()
-	if queue_domain_name_object_errors != nil {
-		return nil, queue_domain_name_object_errors
-	}
-
-	queue_domain_name_object_value := queue_domain_name_object.GetDomainName()
-	
-	queue_port_value, queue_port_value_errors := getQueuePort()
-	if queue_port_value_errors != nil {
-		return nil, queue_port_value_errors
-	}
-
-	queue_url := fmt.Sprintf("https://%s:%s/queue_api", queue_domain_name_object_value, queue_port_value)
 
 	validate := func() []error {
-		return dao.ValidateData(getData(), "Webserver")
-	}
-
-	processRequest := func(w http.ResponseWriter, req *http.Request) {
-		var process_request_errors []error
-		var response_payload_result string
-		result := json.NewMap()
-		if !(req.Method == "POST" || req.Method == "PATCH" || req.Method == "PUT") {
-			process_request_errors = append(process_request_errors, fmt.Errorf("http request method not supported: %s", req.Method))
-		}
-
-		if len(process_request_errors) > 0 {
-			http_extension.WriteResponse(w, result, process_request_errors)
-			return
-		}
-
-		body_payload, body_payload_error := ioutil.ReadAll(req.Body);
-		if body_payload_error != nil {
-			process_request_errors = append(process_request_errors, body_payload_error)
-		}
-
-		if body_payload == nil {
-			process_request_errors = append(process_request_errors, fmt.Errorf("body payload is nil"))
-		}
-
-		if len(process_request_errors) > 0 {
-			http_extension.WriteResponse(w, result, process_request_errors)
-			return
-		}
-
-		json_payload, json_payload_errors := json.Parse(string(body_payload))
-
-		if json_payload_errors != nil {
-			process_request_errors = append(process_request_errors, json_payload_errors...)
-		}
-
-		if json_payload == nil {
-			process_request_errors = append(process_request_errors, fmt.Errorf("json is nil"))
-		}
-
-		if len(process_request_errors) > 0 {
-			http_extension.WriteResponse(w, result, process_request_errors)
-			return
-		}
-
-		trace_id := get_trace_id()
-		json_payload.SetString("[trace_id]", &trace_id)
-
-
-		if queue_push_back_function != nil {
-			queue, queue_errors := json_payload.GetString("[queue]")
-			if queue_errors != nil {
-				process_request_errors = append(process_request_errors, queue_errors...)
-			} else if common.IsNil(queue) {
-				process_request_errors = append(process_request_errors, fmt.Errorf("queue is nil"))
-			}
-
-			queue_mode, queue_mode_errors := json_payload.GetString("[queue_mode]")
-			if queue_mode_errors != nil {
-				process_request_errors = append(process_request_errors, queue_mode_errors...)
-			} else if common.IsNil(queue_mode) {
-				temp_queue_mode := "PushBack"
-				queue_mode = &temp_queue_mode
-				json_payload.SetString("[queue_mode]", queue_mode)
-			}
-
-			async, async_errors := json_payload.GetBool("[async]")
-			if async_errors != nil {
-				process_request_errors = append(process_request_errors, async_errors...)
-			} else if common.IsNil(async) {
-				temp_async := false
-				async = &temp_async
-				json_payload.SetBool("[async]", async)
-			}
-
-			if len(process_request_errors) == 0 {
-				function_response_payload, function_response_payload_errors := (*queue_push_back_function)(*queue, json_payload)
-				if function_response_payload_errors != nil {
-					process_request_errors = append(process_request_errors, function_response_payload_errors...)
-				} else if common.IsNil(function_response_payload) {
-					process_request_errors = append(process_request_errors, fmt.Errorf("function_response_payload is nil"))
-				} else {
-					var function_builder strings.Builder 
-					to_json_string_errors := function_response_payload.ToJSONString(&function_builder)
-					if to_json_string_errors != nil {
-						process_request_errors = append(process_request_errors, to_json_string_errors...)
-					} else {
-						response_payload_result = function_builder.String()
-					}
-				}
-			}
-		} else {
-			var json_payload_builder strings.Builder
-			payload_as_string_errors := json_payload.ToJSONString(&json_payload_builder)
-			if payload_as_string_errors != nil {
-				process_request_errors = append(process_request_errors, payload_as_string_errors...)
-			}
-
-			if len(process_request_errors) > 0 {
-				http_extension.WriteResponse(w, result, process_request_errors)
-				return
-			}
-
-			json_bytes := []byte(json_payload_builder.String())
-			json_reader := bytes.NewReader(json_bytes)
-
-			request, request_error := http.NewRequest(http.MethodPost, queue_url, json_reader)
-			if request_error != nil {
-				process_request_errors = append(process_request_errors, request_error)
-			}
-
-			if len(process_request_errors) > 0 {
-				http_extension.WriteResponse(w, result, process_request_errors)
-				return
-			}
-
-			request.Header.Set("Content-Type", "application/json")
-			http_response, http_response_error := http_client.Do(request)
-			if http_response_error != nil {
-				process_request_errors = append(process_request_errors, http_response_error)
-			} 
-
-			if len(process_request_errors) > 0 {
-				http_extension.WriteResponse(w, result, process_request_errors)
-				return
-			}
-
-			response_payload, response_payload_error := ioutil.ReadAll(http_response.Body);
-			if response_payload_error != nil {
-				process_request_errors = append(process_request_errors, response_payload_error)
-			} else if common.IsNil(response_payload) {
-				process_request_errors = append(process_request_errors, fmt.Errorf("response_payload is nil"))
-			} else {
-				response_payload_result = string(response_payload)
-			}
-		}
-
-		if len(process_request_errors) > 0 {
-			http_extension.WriteResponse(w, result, process_request_errors)
-		} else {
-			w.Write([]byte(response_payload_result))
-		}
+		return nil
 	}
 
 	x := WebServer{
 		Start: func() []error {
-			var errors []error
-
 			buildHandler := http.FileServer(http.Dir("static"))
 			http.Handle("/", buildHandler)
 
-			http.HandleFunc("/api", processRequest)
+			var start_server_errors []error
 
-			temp_port, temp_port_errors := getPort()
-			if temp_port_errors != nil {
-				return temp_port_errors
+			temp_controller_names := get_controller_names()
+			//http.HandleFunc("/queue_api", processRequest)
+
+			for _, temp_controller_name := range temp_controller_names {
+				temp_controller, temp_controller_errors := get_controller_by_name(temp_controller_name)
+				if temp_controller_errors != nil {
+					start_server_errors = append(start_server_errors, temp_controller_errors)
+					continue
+				} else if common.IsNil(temp_controller) {
+					start_server_errors = append(start_server_errors, fmt.Errorf("controller is nil: %s", temp_controller))
+					continue
+				}
+				http.HandleFunc("/webserver_api/" + temp_controller_name, *(temp_controller.GetProcessRequestFunction()))
 			}
 
-			temp_server_crt_path, temp_server_crt_path_errors := getServerCrtPath()
-			if temp_server_crt_path_errors != nil {
-				return temp_server_crt_path_errors
-			}
-
-			temp_server_key_path, temp_server_key_path_errors := getServerKeyPath()
-			if temp_server_key_path_errors != nil {
-				return temp_server_key_path_errors
-			}
-
-			err := http.ListenAndServeTLS(":" + temp_port, temp_server_crt_path, temp_server_key_path, nil)
+			err := http.ListenAndServeTLS(":"+ getPort(),  getServerCrtPath(), getServerKeyPath(), nil)
 			if err != nil {
-				errors = append(errors, err)
+				start_server_errors = append(start_server_errors, err)
 			}
 
-			if len(errors) > 0 {
-				return errors
+			if len(start_server_errors) > 0 {
+				return start_server_errors
 			}
 
 			return nil
