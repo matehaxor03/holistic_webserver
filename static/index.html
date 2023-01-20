@@ -961,6 +961,49 @@ table tr th {
         document.getElementById("top_menu").focus();
     }
 
+    load_branches_for_repository = function(repository_id) {
+        var params = {"[queue]":"ReadRecords_Branch","[where_fields]":{"repository_id":repository_id}};
+        var callback_function = function(result) {
+            if(result["[errors]"]) {
+                return;
+            }
+
+            var content = document.getElementById("branches");
+            if(!content) {
+                return;
+            }
+
+            removeAllChildElements(content);
+            const table = document.createElement("table");
+            const table_header_row = document.createElement("tr");
+            
+            const table_header_row_name = document.createElement("th");
+            const table_header_row_name_text = document.createTextNode("name");
+            table_header_row_name.appendChild(table_header_row_name_text);
+            table_header_row.appendChild(table_header_row_name);
+            
+            const table_header_row_actions = document.createElement("th");
+            const table_header_row_actions_text = document.createTextNode("actions");
+            table_header_row_actions.appendChild(table_header_row_actions_text);
+            table_header_row.appendChild(table_header_row_actions);
+            
+            table.appendChild(table_header_row);
+            
+            const length = result["data"].length
+            for(var i = 0; i < length; i++) {
+                var record = result["data"][i];
+                const table_row_data = document.createElement("tr");
+                const table_row_data_name = document.createElement("td");
+                const table_row_data_name_text = document.createTextNode(record["name"]);
+                table_row_data_name.appendChild(table_row_data_name_text);
+                table_row_data.appendChild(table_row_data_name);
+                table.appendChild(table_row_data);
+            }
+            content.appendChild(table);
+        }
+        send_http_request(params, callback_function);
+    }
+
     load_repositories_for_repository_account = function(repository_account_id) {
         var params = {"[queue]":"ReadRecords_Repository","[where_fields]":{"repository_account_id":repository_account_id}};
         var callback_function = function(result) {
@@ -994,10 +1037,10 @@ table tr th {
             spacer_element.setAttribute("class", "col-12 col-s-12");
             content.appendChild(spacer_element);
 
-            repository_accounts_element = document.createElement("div");
-            repository_accounts_element.setAttribute("id", "branches");
-            repository_accounts_element.setAttribute("class", "menu col-12 col-s-12");
-            content.appendChild(repository_accounts_element);
+            branches_content = document.createElement("div");
+            branches_content.setAttribute("id", "branches");
+            branches_content.setAttribute("class", "menu col-12 col-s-12");
+            content.appendChild(branches_content);
         }
         send_http_request(params, callback_function);
     }
@@ -1035,10 +1078,10 @@ table tr th {
             spacer_element.setAttribute("class", "col-12 col-s-12");
             content.appendChild(spacer_element);
 
-            repository_accounts_element = document.createElement("div");
-            repository_accounts_element.setAttribute("id", "repositories");
-            repository_accounts_element.setAttribute("class", "menu col-12 col-s-12");
-            content.appendChild(repository_accounts_element);
+            repository_content = document.createElement("div");
+            repository_content.setAttribute("id", "repositories");
+            repository_content.setAttribute("class", "menu col-12 col-s-12");
+            content.appendChild(repository_content);
         }
         send_http_request(params, callback_function);
     }
@@ -1076,10 +1119,10 @@ table tr th {
             spacer_element.setAttribute("class", "col-12 col-s-12");
             content.appendChild(spacer_element);
 
-            repository_accounts_element = document.createElement("div");
-            repository_accounts_element.setAttribute("id", "repository_accounts");
-            repository_accounts_element.setAttribute("class", "menu col-12 col-s-12");
-            content.appendChild(repository_accounts_element);
+            repository_accounts_content = document.createElement("div");
+            repository_accounts_content.setAttribute("id", "repository_accounts");
+            repository_accounts_content.setAttribute("class", "menu col-12 col-s-12");
+            content.appendChild(repository_accounts_content);
         }
         send_http_request(params, callback_function);
     }
