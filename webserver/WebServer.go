@@ -57,7 +57,7 @@ func NewWebServer(port string, server_crt_path string, server_key_path string, q
 		controllers["GetSchema_"+table_name], _ = NewWebServerController("GetSchema_"+table_name, getQueueDomainName(), getQueuePort())
 	}
 
-	controllers["Run_StartBuildBranchInstance"], _ = NewWebServerController("Run_StartBuildBranchInstance", getQueueDomainName(), getQueuePort())
+	controllers["Run_StartBranchInstance"], _ = NewWebServerController("Run_StartBranchInstance", getQueueDomainName(), getQueuePort())
 	controllers["Run_NotStarted"], _ = NewWebServerController("Run_NotStarted", getQueueDomainName(), getQueuePort())
 	controllers["Run_Start"], _ = NewWebServerController("Run_Start", getQueueDomainName(), getQueuePort())
 	controllers["Run_CreateSourceFolder"], _ = NewWebServerController("Run_CreateSourceFolder", getQueueDomainName(), getQueuePort())

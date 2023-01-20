@@ -961,6 +961,21 @@ table tr th {
         document.getElementById("top_menu").focus();
     }
 
+    create_record_branch_instance = function(identifier) {
+        console.log(identifier);
+        var button_id = "build_branch_id_button_" + identifier["branch_id"];
+        var button = document.getElementById(button_id);
+        button.setAttribute("disabled", true);
+        var params = {"[queue]":"CreateRecord_BranchInstance", "data":identifier};
+        var callback_function = function(result) {
+            button.removeAttribute("disabled");
+            if(result["[errors]"]) {
+                return;
+            }
+        }
+        send_http_request(params, callback_function);
+    }
+
     load_branches_for_repository = function(repository_id) {
         var params = {"[queue]":"ReadRecords_Branch","[where_fields]":{"repository_id":repository_id}};
         var callback_function = function(result) {
@@ -992,11 +1007,31 @@ table tr th {
             const length = result["data"].length
             for(var i = 0; i < length; i++) {
                 var record = result["data"][i];
+                var branch_id = record["branch_id"];
+                var identifier = {"branch_id":branch_id};
                 const table_row_data = document.createElement("tr");
                 const table_row_data_name = document.createElement("td");
                 const table_row_data_name_text = document.createTextNode(record["name"]);
                 table_row_data_name.appendChild(table_row_data_name_text);
                 table_row_data.appendChild(table_row_data_name);
+                
+                
+                const td_actions = document.createElement("td");
+                const buildButton = document.createElement("button");
+                buildButton.setAttribute("id", "build_branch_id_button_" + branch_id);
+                buildButton.setAttribute("class", "button");
+                const buildButtonText = document.createTextNode("build");
+                var build_function = function (branch_id) {
+                    var _id = Object.assign({}, branch_id);
+                    var x = function() {
+                        create_record_branch_instance(_id);
+                    }
+                    return x;
+                }
+                buildButton.onclick = build_function(identifier);
+                buildButton.appendChild(buildButtonText);
+                td_actions.appendChild(buildButton);
+                table_row_data.appendChild(td_actions);
                 table.appendChild(table_row_data);
             }
             content.appendChild(table);
