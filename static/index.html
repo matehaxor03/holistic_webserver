@@ -961,6 +961,129 @@ table tr th {
         document.getElementById("top_menu").focus();
     }
 
+    load_repositories_for_repository_account = function(repository_account_id) {
+        var params = {"[queue]":"ReadRecords_Repository","[where_fields]":{"repository_account_id":repository_account_id}};
+        var callback_function = function(result) {
+            if(result["[errors]"]) {
+                return;
+            }
+
+            var content = document.getElementById("repositories");
+            if(!content) {
+                return;
+            }
+
+            removeAllChildElements(content);
+            const span = document.createElement("span");
+            const length = result["data"].length
+            for(var i = 0; i < length; i++) {
+                var record = result["data"][i];
+                var name = record["name"];
+                name = encodeURIComponent(name.replace(/"/g, "\\\""));
+                var repository_id = record["repository_id"];
+                const button = document.createElement("button");
+                button.setAttribute("onclick", "load_branches_for_repository(" + repository_id  + ")");
+                button.setAttribute("class", "button menu col-3 col-s-3");
+                const text = document.createTextNode(name);
+                button.appendChild(text);
+                span.appendChild(button);
+            }
+            content.appendChild(span);
+
+            spacer_element = document.createElement("br");
+            spacer_element.setAttribute("class", "col-12 col-s-12");
+            content.appendChild(spacer_element);
+
+            repository_accounts_element = document.createElement("div");
+            repository_accounts_element.setAttribute("id", "branches");
+            repository_accounts_element.setAttribute("class", "menu col-12 col-s-12");
+            content.appendChild(repository_accounts_element);
+        }
+        send_http_request(params, callback_function);
+    }
+
+    load_repository_accounts_for_domain = function(domain_name_id) {
+        var params = {"[queue]":"ReadRecords_RepositoryAccount","[where_fields]":{"domain_name_id":domain_name_id}};
+        var callback_function = function(result) {
+            if(result["[errors]"]) {
+                return;
+            }
+
+            var content = document.getElementById("repository_accounts");
+            if(!content) {
+                return;
+            }
+
+            removeAllChildElements(content);
+            const span = document.createElement("span");
+            const length = result["data"].length
+            for(var i = 0; i < length; i++) {
+                var record = result["data"][i];
+                var name = record["name"];
+                name = encodeURIComponent(name.replace(/"/g, "\\\""));
+                var repository_account_id = record["repository_account_id"];
+                const button = document.createElement("button");
+                button.setAttribute("onclick", "load_repositories_for_repository_account(" + repository_account_id  + ")");
+                button.setAttribute("class", "button menu col-3 col-s-3");
+                const text = document.createTextNode(name);
+                button.appendChild(text);
+                span.appendChild(button);
+            }
+            content.appendChild(span);
+
+            spacer_element = document.createElement("br");
+            spacer_element.setAttribute("class", "col-12 col-s-12");
+            content.appendChild(spacer_element);
+
+            repository_accounts_element = document.createElement("div");
+            repository_accounts_element.setAttribute("id", "repositories");
+            repository_accounts_element.setAttribute("class", "menu col-12 col-s-12");
+            content.appendChild(repository_accounts_element);
+        }
+        send_http_request(params, callback_function);
+    }
+
+    load_domain_names = function() {
+        var params = {"[queue]":"ReadRecords_DomainName"};
+        var callback_function = function(result) {
+            if(result["[errors]"]) {
+                return;
+            }
+
+            var content = document.getElementById("domain_list");
+            if(!content) {
+                return;
+            }
+
+            removeAllChildElements(content);
+            const span = document.createElement("span");
+            const length = result["data"].length
+            for(var i = 0; i < length; i++) {
+                var record = result["data"][i];
+                var name = record["name"];
+                name = encodeURIComponent(name.replace(/"/g, "\\\""));
+                var domain_name_id = record["domain_name_id"];
+                const button = document.createElement("button");
+                button.setAttribute("onclick", "load_repository_accounts_for_domain(" + domain_name_id  + ")");
+                button.setAttribute("class", "button menu col-3 col-s-3");
+                const text = document.createTextNode(name);
+                button.appendChild(text);
+                span.appendChild(button);
+            }
+            content.appendChild(span);
+
+            spacer_element = document.createElement("br");
+            spacer_element.setAttribute("class", "col-12 col-s-12");
+            content.appendChild(spacer_element);
+
+            repository_accounts_element = document.createElement("div");
+            repository_accounts_element.setAttribute("id", "repository_accounts");
+            repository_accounts_element.setAttribute("class", "menu col-12 col-s-12");
+            content.appendChild(repository_accounts_element);
+        }
+        send_http_request(params, callback_function);
+    }
+
     navigate_to_home_page = function() {
         document.title = "Holistic Home page";
         main_content = document.getElementById("main");
@@ -970,7 +1093,15 @@ table tr th {
         spacer_element = document.createElement("br");
         spacer_element.setAttribute("class", "col-12 col-s-12");
         main_content.appendChild(spacer_element);
+
+        repository_list_element = document.createElement("div");
+        repository_list_element_text = document.createTextNode("loading...");
+        repository_list_element.appendChild(repository_list_element_text);
+        repository_list_element.setAttribute("id", "domain_list");
+        repository_list_element.setAttribute("class", "menu col-12 col-s-12");
+        main_content.appendChild(repository_list_element);
         document.getElementById("top_menu").focus();
+        load_domain_names();
     }
 
 
