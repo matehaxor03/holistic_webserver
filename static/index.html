@@ -1322,13 +1322,12 @@ table tr th {
                     build_step_status_name_lookup[record["name"]] = record;
                 }
             }
+            setTimeout(refresh_build_activity, 1);
         }
         send_http_request(params, callback_function);
     }
     
     get_build_step_statuses();
     navigate_to_home_page();
-    setTimeout(refresh_build_activity, 1000);
-
 
 </script>
