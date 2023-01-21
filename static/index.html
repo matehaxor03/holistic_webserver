@@ -110,7 +110,9 @@ table tr th {
 <div class="row">
   <div id="main" class="col-12 col-s-12"></div>
 </div>
-
+<div class="row">
+    <div id="footer" class="col-12 col-s-12"></div>
+</div>
 </body>
 
 <script>
@@ -1162,6 +1164,39 @@ table tr th {
         send_http_request(params, callback_function);
     }
 
+    refresh_build_activity = function() {
+        var params = {"[queue]":"ReadRecords_BranchInstance"};
+        var callback_function = function(result) {
+            if(result["[errors]"]) {
+                return;
+            }
+
+            var content = document.getElementById("footer");
+            if(!content) {
+                return;
+            }
+
+            const span = document.createElement("span");
+            const length = result["data"].length
+            for(var i = 0; i < length; i++) {
+                var record = result["data"][i];
+                var branch_instance_id = record["branch_instance_id"];
+                var branch_id = record["branch_id"];
+                var build_step_status_id = record["build_step_status_id"];
+                const button = document.createElement("button");
+                //button.setAttribute("onclick", "load_repository_accounts_for_domain(" + domain_name_id  + ")");
+                button.setAttribute("class", "button menu col-3 col-s-3");
+                const text = document.createTextNode(branch_instance_id + " " + branch_id + " " + build_step_status_id);
+                button.appendChild(text);
+                span.appendChild(button);
+            }
+            removeAllChildElements(content);
+            content.appendChild(span);
+            setTimeout(refresh_build_activity, 10000);
+        }
+        send_http_request(params, callback_function);
+    }
+
     navigate_to_home_page = function() {
         document.title = "Holistic Home page";
         main_content = document.getElementById("main");
@@ -1182,8 +1217,8 @@ table tr th {
         load_domain_names();
     }
 
-
     navigate_to_home_page();
+    setTimeout(refresh_build_activity, 10000);
 
 
 </script>
