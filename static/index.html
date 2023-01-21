@@ -116,6 +116,7 @@ table tr th {
 </body>
 
 <script>
+    var build_step_status_lookup = {};
     var url = 'https://' + location.hostname + ':5001/webserver_api';
     var encodeHTMLText = function(text) {
         text = encodeURIComponent(text);
@@ -1198,11 +1199,15 @@ table tr th {
                 var branch_instance_id = record["branch_instance_id"];
                 var repository_name = respositories[record["repository_id"]]["name"];
                 var branch_name = record["branch_name"]
-                var build_step_status_id = record["build_step_status_id"];
+                var build_step_status_id = null;
+                build_step_status_id = record["build_step_status_id"];
                 const button = document.createElement("button");
                 //button.setAttribute("onclick", "load_repository_accounts_for_domain(" + domain_name_id  + ")");
                 button.setAttribute("class", "button menu col-3 col-s-3");
-                const text = document.createTextNode(repository_name + " [" + branch_name + "] #" + branch_instance_id + " " + build_step_status_id);
+                if(build_step_status_lookup[build_step_status_id]) {
+                    build_step_status_id = build_step_status_lookup[build_step_status_id]["name"];
+                }
+                const text = document.createTextNode(repository_name + " [" + branch_name + "] #" + branch_instance_id + " - " + build_step_status_id);
                 button.appendChild(text);
                 span.appendChild(button);
             }
@@ -1284,6 +1289,23 @@ table tr th {
         load_domain_names();
     }
 
+    get_build_step_statuses = function() {
+        var params = {"[queue]":"ReadRecords_BuildStepStatus"};
+        var callback_function = function(result) {
+            if(result["[errors]"]) {
+                return;
+            }
+            for(var i = 0; i < result["data"].length; i++) {
+                var record = result["data"][i];
+                if(!build_step_status_lookup[record["build_step_status_id"]]) {
+                    build_step_status_lookup[record["build_step_status_id"]] = record;
+                }
+            }
+        }
+        send_http_request(params, callback_function);
+    }
+    
+    get_build_step_statuses();
     navigate_to_home_page();
     setTimeout(refresh_build_activity, 10000);
 
