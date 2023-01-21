@@ -981,7 +981,7 @@ table tr th {
     }
 
     load_branches_for_repository = function(repository_id) {
-        var params = {"[queue]":"ReadRecords_Branch","[where_fields]":{"repository_id":repository_id}};
+        var params = {"[queue]":"ReadRecords_Branch","[select_fields]":["branch_id","name"],"[where_fields]":{"repository_id":repository_id}};
         var callback_function = function(result) {
             if(result["[errors]"]) {
                 return;
@@ -1044,7 +1044,7 @@ table tr th {
     }
 
     load_repositories_for_repository_account = function(repository_account_id) {
-        var params = {"[queue]":"ReadRecords_Repository","[where_fields]":{"repository_account_id":repository_account_id}};
+        var params = {"[queue]":"ReadRecords_Repository","[select_fields]":["repository_id","name"],"[where_fields]":{"repository_account_id":repository_account_id}};
         var callback_function = function(result) {
             if(result["[errors]"]) {
                 return;
@@ -1085,7 +1085,7 @@ table tr th {
     }
 
     load_repository_accounts_for_domain = function(domain_name_id) {
-        var params = {"[queue]":"ReadRecords_RepositoryAccount","[where_fields]":{"domain_name_id":domain_name_id}};
+        var params = {"[queue]":"ReadRecords_RepositoryAccount","[select_fields]":["repository_account_id","domain_name_id","name"],"[where_fields]":{"domain_name_id":domain_name_id}};
         var callback_function = function(result) {
             if(result["[errors]"]) {
                 return;
@@ -1126,7 +1126,7 @@ table tr th {
     }
 
     load_domain_names = function() {
-        var params = {"[queue]":"ReadRecords_DomainName"};
+        var params = {"[queue]":"ReadRecords_DomainName","[select_fields]":["domain_name_id","name"]};
         var callback_function = function(result) {
             if(result["[errors]"]) {
                 return;
@@ -1179,7 +1179,7 @@ table tr th {
             }
         }
 
-        var params = {"[queue]":"ReadRecords_Repository", "[where_fields]":{"repository_id":respostory_ids_array}, "[where_fields_logic]":{"repository_id":"in"}};
+        var params = {"[queue]":"ReadRecords_Repository","[select_fields]":["repository_id","name"],"[where_fields]":{"repository_id":respostory_ids_array}, "[where_fields_logic]":{"repository_id":"in"}};
         var callback_function = function(result) {
             if(result["[errors]"]) {
                 return;
@@ -1237,7 +1237,7 @@ table tr th {
             }
         }
 
-        var params = {"[queue]":"ReadRecords_Branch","[where_fields]":{"branch_id":branch_ids_array}, "[where_fields_logic]":{"branch_id":"in"}};
+        var params = {"[queue]":"ReadRecords_Branch","[select_fields]":["branch_id","name","repository_id"],"[where_fields]":{"branch_id":branch_ids_array}, "[where_fields_logic]":{"branch_id":"in"}};
         var callback_function = function(result) {
             if(result["[errors]"]) {
                 return;
@@ -1266,7 +1266,7 @@ table tr th {
         build_step_status_ids_array.push(build_step_status_name_lookup["Not Started"]["build_step_status_id"]);
         build_step_status_ids_array.push(build_step_status_name_lookup["Running"]["build_step_status_id"]);
 
-        var params = {"[queue]":"ReadRecords_BranchInstance","[where_fields]":{"build_step_status_id":build_step_status_ids_array}, "[where_fields_logic]":{"build_step_status_id":"in"}};
+        var params = {"[queue]":"ReadRecords_BranchInstance","[select_fields]":["branch_instance_id", "branch_id", "build_step_status_id"], "[where_fields]":{"build_step_status_id":build_step_status_ids_array}, "[where_fields_logic]":{"build_step_status_id":"in"}};
         var callback_function = function(result) {
             if(result["[errors]"]) {
                 return;
@@ -1298,7 +1298,7 @@ table tr th {
     }
 
     get_build_step_statuses = function() {
-        var params = {"[queue]":"ReadRecords_BuildStepStatus"};
+        var params = {"[queue]":"ReadRecords_BuildStepStatus","[select_fields]":["build_step_status_id","name"]};
         var callback_function = function(result) {
             if(result["[errors]"]) {
                 return;
