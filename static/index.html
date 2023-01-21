@@ -1206,10 +1206,13 @@ table tr th {
                 //button.setAttribute("onclick", "load_repository_accounts_for_domain(" + domain_name_id  + ")");
                 button.setAttribute("class", "button menu col-3 col-s-3");
                 if(build_step_status_lookup[build_step_status_id]) {
-                    build_step_status_id = build_step_status_lookup[build_step_status_id]["name"];
+                    build_step_status_id = build_step_status_lookup[build_step_status_id]["icon"];
                 }
-                const text = document.createTextNode(repository_name + " [" + branch_name + "] #" + branch_instance_id + " - " + build_step_status_id);
+                const text = document.createTextNode(repository_name + " [" + branch_name + "] #" + branch_instance_id + " - ")
                 button.appendChild(text);
+                var icon = document.createElement("span");
+                icon.innerHTML = build_step_status_id;
+                button.appendChild(icon);
                 span.appendChild(button);
             }
 
@@ -1300,8 +1303,17 @@ table tr th {
             if(result["[errors]"]) {
                 return;
             }
+
+           
             for(var i = 0; i < result["data"].length; i++) {
                 var record = result["data"][i];
+                
+                if(record["name"] == "Not Started") {
+                    record["icon"] = "&#8987;" 
+                } else if (record["name"] == "Running") {
+                    record["icon"] = "&#128640;" 
+                }
+
                 if(!build_step_status_lookup[record["build_step_status_id"]]) {
                     build_step_status_lookup[record["build_step_status_id"]] = record;
                 }
