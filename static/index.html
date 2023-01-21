@@ -117,6 +117,7 @@ table tr th {
 
 <script>
     var build_step_status_lookup = {};
+    var build_step_status_name_lookup = {};
     var url = 'https://' + location.hostname + ':5001/webserver_api';
     var encodeHTMLText = function(text) {
         text = encodeURIComponent(text);
@@ -1233,7 +1234,7 @@ table tr th {
             }
         }
 
-        var params = {"[queue]":"ReadRecords_Branch", "[where_fields]":{"branch_id":branch_ids_array}, "[where_fields_logic]":{"branch_id":"in"}};
+        var params = {"[queue]":"ReadRecords_Branch","[where_fields]":{"branch_id":branch_ids_array}, "[where_fields_logic]":{"branch_id":"in"}};
         var callback_function = function(result) {
             if(result["[errors]"]) {
                 return;
@@ -1258,7 +1259,11 @@ table tr th {
     }
 
     refresh_build_activity = function() {
-        var params = {"[queue]":"ReadRecords_BranchInstance"};
+        var build_step_status_ids_array = [];
+        build_step_status_ids_array.push(build_step_status_name_lookup["Not Started"]["build_step_status_id"]);
+        build_step_status_ids_array.push(build_step_status_name_lookup["Running"]["build_step_status_id"]);
+
+        var params = {"[queue]":"ReadRecords_BranchInstance","[where_fields]":{"build_step_status_id":build_step_status_ids_array}, "[where_fields_logic]":{"build_step_status_id":"in"}};
         var callback_function = function(result) {
             if(result["[errors]"]) {
                 return;
@@ -1299,6 +1304,10 @@ table tr th {
                 var record = result["data"][i];
                 if(!build_step_status_lookup[record["build_step_status_id"]]) {
                     build_step_status_lookup[record["build_step_status_id"]] = record;
+                }
+
+                if(!build_step_status_name_lookup[record["name"]]) {
+                    build_step_status_name_lookup[record["name"]] = record;
                 }
             }
         }
