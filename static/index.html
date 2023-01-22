@@ -1255,8 +1255,51 @@ table tr th {
                 current_branch_instance = branch_instances[i];
                 current_branch_instance["branch_name"] = branches[current_branch_instance["branch_id"]]["name"];
                 current_branch_instance["repository_id"] = branches[current_branch_instance["branch_id"]]["repository_id"];
+                console.log(current_branch_instance["metrics"]);
             }
             refresh_build_respositories(branch_instances);
+        }
+        send_http_request(params, callback_function);
+    }
+
+    refresh_branch_instance_steps = function(branch_instances) {
+        var ids = {}
+        var ids_array = [];
+        var ids_array_length = branch_instances.length;
+        for(var i = 0; i < ids_array_length; i++) {
+            current_record = branch_instances[i];
+            current_id = current_record["branch_instance_id"];
+            if(!ids[current_id]) {
+                ids[current_id] = current_record;
+                ids_array.push(current_id);
+            }
+        }
+
+        var params = {"[queue]":"ReadRecords_BranchInstanceStep","[select_fields]":["branch_instance_id","build_step_status_id","COUNT(*)"],"[where_fields]":{"branch_instance_id":ids_array}, "[where_fields_logic]":{"branch_instance_id":"in"},"[group_by]":["branch_instance_id","build_step_status_id"]};
+        var callback_function = function(result) {
+            if(result["[errors]"]) {
+                return;
+            }
+
+            var metrics = {};
+            for(var i = 0; i < result["data"].length; i++) {
+                var current = result["data"][i];
+                var branch_instance_id = current["branch_instance_id"];
+                var build_step_status_id = current["build_step_status_id"];
+                var count = current["COUNT(*)"];
+                if(!metrics[branch_instance_id]) {
+                    var metric = {};
+                    metrics[branch_instance_id] = metric;
+                }
+
+                metrics[branch_instance_id][build_step_status_lookup[build_step_status_id]["name"]] = count;
+            }
+
+            for(var i = 0; i < branch_instances.length; i++) {
+                current_branch_instance = branch_instances[i];
+                current_branch_instance["metrics"] = metrics[current_branch_instance["branch_instance_id"]];
+            }
+            refresh_build_branches(branch_instances);
         }
         send_http_request(params, callback_function);
     }
@@ -1272,7 +1315,7 @@ table tr th {
                 return;
             }
 
-            refresh_build_branches(result["data"]);
+            refresh_branch_instance_steps(result["data"]);
         }
         send_http_request(params, callback_function);
     }
