@@ -1213,6 +1213,61 @@ table tr th {
                 var icon = document.createElement("span");
                 icon.innerHTML = build_step_status_id;
                 button.appendChild(icon);
+                
+                var metrics = record["metrics"];
+
+                var passed_count = 0.0;
+                var failed_count = 0.0;
+                var running_count = 0.0;
+                var not_started_count = 0.0;
+                var total_count = 0.0;
+                
+                if(metrics && metrics["Passed"]){
+                    passed_count = metrics["Passed"];
+                    total_count += (passed_count * 1.0);
+                }
+
+                if(metrics && metrics["Failed"]){
+                    failed_count = metrics["Failed"];
+                    total_count += (failed_count * 1.0);
+                }
+
+                if(metrics && metrics["Running"]){
+                    running_count = metrics["Running"];
+                    total_count += (running_count * 1.0);
+                }
+
+                if(metrics && metrics["Not Started"]){
+                    not_started_count = metrics["Not Started"];
+                    total_count += (not_started_count * 1.0);
+                }
+
+                if(total_count == 0) {
+                    total_count = 1;
+                    not_started_count = 1;
+                }
+
+                progress_bar = document.createElement("div");
+                progress_bar.setAttribute("style", "width:100%; height:20px;");
+                
+                passed_progress_bar = document.createElement("div");
+                passed_progress_bar.setAttribute("style", "width:" + ((passed_count/total_count)* 100.0)  + "%; background-color:green; height:80%; display:inline-block;");
+
+                failed_progress_bar = document.createElement("div");
+                failed_progress_bar.setAttribute("style", "width:" + ((failed_count/total_count * 100.0))  + "%; background-color:red; height:80%; display:inline-block;");
+
+                running_progress_bar = document.createElement("div");
+                running_progress_bar.setAttribute("style", "width:" + ((running_count/total_count * 100.0))  + "%; background-color:blue; height:80%; display:inline-block;");
+
+                not_started_bar = document.createElement("div");
+                not_started_bar.setAttribute("style", "width:" + ((not_started_count/total_count * 100.0))  + "%; background-color:grey; height:80%; display:inline-block;");
+
+                progress_bar.appendChild(passed_progress_bar);
+                progress_bar.appendChild(failed_progress_bar);
+                progress_bar.appendChild(running_progress_bar);
+                progress_bar.appendChild(not_started_bar);
+
+                button.appendChild(progress_bar);
                 span.appendChild(button);
             }
 
