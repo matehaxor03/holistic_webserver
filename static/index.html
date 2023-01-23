@@ -1166,6 +1166,32 @@ table tr th {
         send_http_request(params, callback_function);
     }
 
+    stop_build = function(payload) {
+        payload["build_step_status_id"] = build_step_status_name_lookup["Stopped"]["build_step_status_id"];
+        
+        var queue = "UpdateRecord_";
+        if(payload["branch_instance_id"]) {
+            queue += "BranchInstance";
+        } else {
+            return;
+        }
+
+        if(payload["branch_instance_id"]) {
+            branch_instance_button = document.getElementById("branch_instance_build_status_button" + payload["branch_instance_id"]);
+            if(branch_instance_button) {
+                branch_instance_button.parentElement.removeChild(branch_instance_button);
+            }
+        }
+        
+        var params = {"[queue]":queue, "data":payload};
+        var callback_function = function(result) {
+            if(result["[errors]"]) {
+                return;
+            }
+        }
+        send_http_request(params, callback_function);
+    }
+
     refresh_build_respositories = function(branch_instances) {
         var respostory_ids = {}
         var respostory_ids_array = [];
@@ -1182,6 +1208,7 @@ table tr th {
         var params = {"[queue]":"ReadRecords_Repository","[select_fields]":["repository_id","name"],"[where_fields]":{"repository_id":respostory_ids_array}, "[where_fields_logic]":{"repository_id":"in"}};
         var callback_function = function(result) {
             if(result["[errors]"]) {
+                setTimeout(refresh_build_activity, 10000);
                 return;
             }
 
@@ -1203,11 +1230,33 @@ table tr th {
                 var build_step_status_id = null;
                 build_step_status_id = record["build_step_status_id"];
                 const button = document.createElement("button");
-                //button.setAttribute("onclick", "load_repository_accounts_for_domain(" + domain_name_id  + ")");
                 button.setAttribute("class", "button menu col-3 col-s-3");
+                button.setAttribute("id", "branch_instance_build_status_button" + branch_instance_id);
                 if(build_step_status_lookup[build_step_status_id]) {
                     build_step_status_id = build_step_status_lookup[build_step_status_id]["icon"];
                 }
+
+                var cancel_icon = document.createElement("span");
+                cancel_icon.setAttribute("style", "color:red;")
+                cancel_icon.innerHTML = "&#9746;";
+
+                var target_identifier = {};
+                target_identifier["branch_instance_id"] = branch_instance_id;
+
+                var stop_build_function = function (target_identifier) {
+                    var _id = Object.assign({}, target_identifier);
+                    var x = function() {
+                        stop_build(_id);
+                    }
+                    return x;
+                }
+
+                var stop_build_function_instance = stop_build_function(target_identifier);
+
+                cancel_icon.onclick = stop_build_function_instance;
+
+                button.appendChild(cancel_icon);
+
                 const text = document.createTextNode(repository_name + " [" + branch_name + "] #" + branch_instance_id + " - ")
                 button.appendChild(text);
                 var icon = document.createElement("span");
@@ -1295,6 +1344,7 @@ table tr th {
         var params = {"[queue]":"ReadRecords_Branch","[select_fields]":["branch_id","name","repository_id"],"[where_fields]":{"branch_id":branch_ids_array}, "[where_fields_logic]":{"branch_id":"in"}};
         var callback_function = function(result) {
             if(result["[errors]"]) {
+                setTimeout(refresh_build_activity, 10000);
                 return;
             }
 
@@ -1333,6 +1383,7 @@ table tr th {
         var params = {"[queue]":"ReadRecords_BranchInstanceStep","[select_fields]":["branch_instance_id","build_step_status_id","COUNT(*)"],"[where_fields]":{"branch_instance_id":ids_array}, "[where_fields_logic]":{"branch_instance_id":"in"},"[group_by]":["branch_instance_id","build_step_status_id"]};
         var callback_function = function(result) {
             if(result["[errors]"]) {
+                setTimeout(refresh_build_activity, 10000);
                 return;
             }
 
@@ -1354,6 +1405,7 @@ table tr th {
                 current_branch_instance = branch_instances[i];
                 current_branch_instance["metrics"] = metrics[current_branch_instance["branch_instance_id"]];
             }
+
             refresh_build_branches(branch_instances);
         }
         send_http_request(params, callback_function);
@@ -1367,10 +1419,18 @@ table tr th {
         var params = {"[queue]":"ReadRecords_BranchInstance","[select_fields]":["branch_instance_id", "branch_id", "build_step_status_id"], "[where_fields]":{"build_step_status_id":build_step_status_ids_array}, "[where_fields_logic]":{"build_step_status_id":"in"}};
         var callback_function = function(result) {
             if(result["[errors]"]) {
+                setTimeout(refresh_build_activity, 10000);
                 return;
             }
 
-            refresh_branch_instance_steps(result["data"]);
+            var branch_instances = result["data"];
+            if(branch_instances.length > 0){
+                refresh_branch_instance_steps(branch_instances);
+            } else {
+                content = document.getElementById("footer");
+                removeAllChildElements(content);
+                setTimeout(refresh_build_activity, 10000);
+            }
         }
         send_http_request(params, callback_function);
     }
