@@ -118,6 +118,11 @@ table tr th {
 <script>
     var build_step_status_lookup = {};
     var build_step_status_name_lookup = {};
+    var build_step_group_lookup = {};
+    var build_step_group_name_lookup = {};
+    var build_step_lookup = {};
+    var build_step_name_lookup = {};
+
     var url = 'https://' + location.hostname + ':5001/webserver_api';
     var encodeHTMLText = function(text) {
         text = encodeURIComponent(text);
@@ -1192,6 +1197,60 @@ table tr th {
         send_http_request(params, callback_function);
     }
 
+    show_build = function(payload) {
+        if(!payload["branch_instance_id"]) {
+            return;
+        }
+
+        var params = {"[queue]":"ReadRecords_BranchInstanceStep","[select_fields]":["build_step_id","build_step_group_id","build_step_status_id"],"[where_fields]":{"branch_instance_id":payload["branch_instance_id"]},"[order_by]":[{"order":"ascending"}]};
+        var callback_function = function(result) {
+            if(result["[errors]"]) {
+                return;
+            }
+
+            for(var i=0; i < result["data"].length; i++) {
+                result["data"][i]["build_step_status_name"] = build_step_status_lookup[result["data"][i]["build_step_status_id"]]["name"];
+                result["data"][i]["build_step_name"] = build_step_lookup[result["data"][i]["build_step_id"]]["name"];
+                result["data"][i]["build_step_group_name"] = build_step_group_lookup[result["data"][i]["build_step_group_id"]]["name"];
+            }
+
+            var setup = [];
+            var run = [];
+            var teardown = [];
+            var current_order = null;
+
+            for(var i=0; i < result["data"].length; i++) {
+                var current_record = result["data"][i];
+                if(current_record["build_step_group_name"] == "Setup") {
+                    setup.push(current_record);
+                } else if (current_record["build_step_group_name"] == "Teardown") {
+                    teardown.push(current_record);
+                } else {
+                    compare_order = current_record["order"];
+                    if(current_order == null) {
+                        var new_array = [];
+                        run.push(new_array);
+                        run[run.length-1].push(current_record);
+                    } else if(compare_order == current_order) {
+                        run[run.length-1].push(current_record);
+                    } else {
+                        current_order = compare_order;
+                        var new_array = [];
+                        run.push(new_array);
+                        run[run.length-1].push(current_record);
+                    }
+                }
+            }
+
+            console.log(result);
+            console.log(setup);
+            console.log(run);
+            console.log(teardown);
+
+        }
+        send_http_request(params, callback_function);
+    }
+
     refresh_build_respositories = function(branch_instances) {
         var respostory_ids = {}
         var respostory_ids_array = [];
@@ -1232,6 +1291,7 @@ table tr th {
                 const button = document.createElement("button");
                 button.setAttribute("class", "button menu col-3 col-s-3");
                 button.setAttribute("id", "branch_instance_build_status_button" + branch_instance_id);
+
                 if(build_step_status_lookup[build_step_status_id]) {
                     build_step_status_id = build_step_status_lookup[build_step_status_id]["icon"];
                 }
@@ -1242,6 +1302,17 @@ table tr th {
 
                 var target_identifier = {};
                 target_identifier["branch_instance_id"] = branch_instance_id;
+
+                var show_build_visial = function (target_identifier) {
+                    var _id = Object.assign({}, target_identifier);
+                    var x = function() {
+                        show_build(_id);
+                    }
+                    return x;
+                }
+
+                var show_build_visial_instance = show_build_visial(target_identifier);
+                button.onclick = show_build_visial_instance;
 
                 var stop_build_function = function (target_identifier) {
                     var _id = Object.assign({}, target_identifier);
@@ -1455,7 +1526,7 @@ table tr th {
         load_domain_names();
     }
 
-    get_build_step_statuses = function() {
+    get_build_step_status_lookup = function() {
         var params = {"[queue]":"ReadRecords_BuildStepStatus","[select_fields]":["build_step_status_id","name"]};
         var callback_function = function(result) {
             if(result["[errors]"]) {
@@ -1484,8 +1555,56 @@ table tr th {
         }
         send_http_request(params, callback_function);
     }
+
+    get_build_step_group_lookup = function() {
+        var params = {"[queue]":"ReadRecords_BuildStepGroup","[select_fields]":["build_step_group_id","name"]};
+        var callback_function = function(result) {
+            if(result["[errors]"]) {
+                return;
+            }
+
+            for(var i = 0; i < result["data"].length; i++) {
+                var record = result["data"][i];
+
+                if(!build_step_group_lookup[record["build_step_group_id"]]) {
+                    build_step_group_lookup[record["build_step_group_id"]] = record;
+                }
+
+                if(!build_step_group_name_lookup[record["name"]]) {
+                    build_step_group_name_lookup[record["name"]] = record;
+                }
+            }
+        }
+        send_http_request(params, callback_function);
+    }
+
+    get_build_step_lookup = function() {
+        var params = {"[queue]":"ReadRecords_BuildStep","[select_fields]":["build_step_id","name"]};
+        var callback_function = function(result) {
+            if(result["[errors]"]) {
+                return;
+            }
+
+            for(var i = 0; i < result["data"].length; i++) {
+                var record = result["data"][i];
+
+                if(!build_step_lookup[record["build_step_id"]]) {
+                    build_step_lookup[record["build_step_id"]] = record;
+                }
+
+                if(!build_step_name_lookup[record["name"]]) {
+                    build_step_name_lookup[record["name"]] = record;
+                }
+            }
+        }
+        send_http_request(params, callback_function);
+    }
     
-    get_build_step_statuses();
+    get_build_step_lookup();
+    get_build_step_group_lookup();
+    get_build_step_status_lookup();
+
+
     navigate_to_home_page();
 
 </script>
