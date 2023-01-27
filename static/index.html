@@ -151,6 +151,10 @@ table tr th {
             return
         }
 
+        if(!params["[queue_mode]"]) {
+            params["[queue_mode]"] = "PushFront";
+        }
+
         var http = new XMLHttpRequest();
         http.onreadystatechange = function() { 
             if (http.readyState == 4) {
@@ -1219,7 +1223,7 @@ table tr th {
             return;
         }
 
-        var params = {"[queue]":"ReadRecords_BranchInstanceStep","[select_fields]":["build_step_id","build_step_group_id","build_step_status_id","order","parameters"],"[where_fields]":{"branch_instance_id":payload["branch_instance_id"]},"[order_by]":[{"order":"ascending"}]};
+        var params = {"[queue]":"ReadRecords_BranchInstanceStep","[select_fields]":["build_step_id","build_step_group_id","build_step_status_id","order","parameters"],"[where_fields]":{"branch_instance_id":payload["branch_instance_id"]},"[order_by]":[{"branch_instance_step_id":"ascending"},{"order":"ascending"}]};
         var callback_function = function(result) {
             if(result["[errors]"]) {
                 return;
@@ -1316,7 +1320,7 @@ table tr th {
                 }
 
                 if(found_tests) {
-                    span_col.setAttribute("class", "col-2 col-s-2");
+                    span_col.setAttribute("class", "col-3 col-s-3");
                 } else {
                     span_col.setAttribute("class", "col-1 col-s-1");
                 }
