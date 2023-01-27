@@ -1197,12 +1197,29 @@ table tr th {
         send_http_request(params, callback_function);
     }
 
+    translate_step_name = function(name) {
+        name = name.replace("Run_","");
+        name = name.replace("Create", "+");
+        name = name.replace("Assign", "+");
+        name = name.replace("Delete", "-");
+        name = name.replace("Remove", "-");
+        name = name.replace("Pull", "▼");
+        name = name.replace("Clone", "▼");
+        name = name.replace("Folder", "");
+        name = name.replace("▼BranchOrTag", "▼Clone");
+        name = name.replace("▼LatestBranchOrTag", "▼Pull");
+        name = name.replace("To", ">");
+        name = name.replace("From", "<");
+        name = name.replace("RepositoryAccount", "Account");
+        return name;
+    }
+
     show_build = function(payload) {
         if(!payload["branch_instance_id"]) {
             return;
         }
 
-        var params = {"[queue]":"ReadRecords_BranchInstanceStep","[select_fields]":["build_step_id","build_step_group_id","build_step_status_id"],"[where_fields]":{"branch_instance_id":payload["branch_instance_id"]},"[order_by]":[{"order":"ascending"}]};
+        var params = {"[queue]":"ReadRecords_BranchInstanceStep","[select_fields]":["build_step_id","build_step_group_id","build_step_status_id","order","parameters"],"[where_fields]":{"branch_instance_id":payload["branch_instance_id"]},"[order_by]":[{"order":"ascending"}]};
         var callback_function = function(result) {
             if(result["[errors]"]) {
                 return;
@@ -1227,16 +1244,16 @@ table tr th {
                     teardown.push(current_record);
                 } else {
                     compare_order = current_record["order"];
-                    if(current_order == null) {
-                        var new_array = [];
-                        run.push(new_array);
-                        run[run.length-1].push(current_record);
-                    } else if(compare_order == current_order) {
+                    if(current_order == null || compare_order > current_order) {
+                        current_order = compare_order;
+                        
+                        if(!(current_record["build_step_name"] === "Run_IntegrationTestSuite" ||
+                           current_record["build_step_name"] === "Run_Sync")) {
+                            var new_array = [];
+                            run.push(new_array);
+                        }
                         run[run.length-1].push(current_record);
                     } else {
-                        current_order = compare_order;
-                        var new_array = [];
-                        run.push(new_array);
                         run[run.length-1].push(current_record);
                     }
                 }
@@ -1246,6 +1263,95 @@ table tr th {
             console.log(setup);
             console.log(run);
             console.log(teardown);
+
+            const setup_span = document.createElement("span");
+            setup_span.setAttribute("class", "col-1 col-s-1");
+
+            const teardown_span = document.createElement("span");
+            teardown_span.setAttribute("class", "col-1 col-s-1");
+
+            var run_spans = [];
+
+            for(var i=0; i<setup.length; i++) {
+                const button = document.createElement("button");
+                button.setAttribute("class", "menu button");
+                button_text = document.createTextNode(translate_step_name(setup[i]["build_step_name"]));
+                button.appendChild(button_text);
+                setup_span.appendChild(button);
+
+                spacer_element = document.createElement("br");
+                setup_span.appendChild(spacer_element);
+            }
+
+            for(var i=0;i<run.length;i++) {
+                var current_run_column = run[i];
+                const span_col = document.createElement("span");                
+                var found_tests = false;
+                for(var j=0; j<current_run_column.length; j++) {
+                    const button = document.createElement("button");
+                    button.setAttribute("class", "menu button");
+                    var button_text = "";
+                    if(current_run_column[j]["build_step_name"] !== "Run_IntegrationTestSuite") {
+                        button_text = document.createTextNode((current_run_column[j]["build_step_name"]).replace("Run_", ""));
+                    } else {
+                        var test_suite_name = JSON.parse(current_run_column[j]["parameters"])["test_suite_name"];
+                        test_suite_name = test_suite_name.replace("_Integration_test.go", "");
+                        if(test_suite_name.indexOf("/") !== -1) {
+                            var test_suite_name_parts = test_suite_name.split("/");
+                            test_suite_name = test_suite_name_parts[(test_suite_name_parts.length)-1];
+                        }
+                        button_text = document.createTextNode(test_suite_name);
+                    }
+
+                    button.appendChild(button_text);
+                  
+                    span_col.appendChild(button);
+
+                    spacer_element = document.createElement("br");
+                    span_col.appendChild(spacer_element);
+
+                    if(current_run_column[j]["build_step_name"] === "Run_IntegrationTests") {
+                        found_tests = true;
+                    }
+                }
+
+                if(found_tests) {
+                    span_col.setAttribute("class", "col-2 col-s-2");
+                } else {
+                    span_col.setAttribute("class", "col-1 col-s-1");
+                }
+
+                run_spans.push(span_col);
+            }
+
+            for(var i=0; i<teardown.length; i++) {
+                const button = document.createElement("button");
+                button.setAttribute("class", "menu button");
+                button_text = document.createTextNode(translate_step_name(teardown[i]["build_step_name"]));
+                button.appendChild(button_text);
+                teardown_span.appendChild(button);
+
+                spacer_element = document.createElement("br");
+                teardown_span.appendChild(spacer_element);
+            }
+
+            build_table = document.getElementById("build_table");
+            if(build_table) {
+                removeAllChildElements(build_table);
+            } else {
+                build_table = document.createElement("div");
+                build_table.setAttribute("id","build_table");
+                var content = document.getElementById("main");
+                content.appendChild(build_table);
+            }
+
+            build_table.appendChild(setup_span);
+            for(var i=0; i < run_spans.length; i++) {
+                build_table.appendChild(run_spans[i]);
+            }
+            build_table.appendChild(teardown_span);
+
+         
 
         }
         send_http_request(params, callback_function);
