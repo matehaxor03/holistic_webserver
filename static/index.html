@@ -106,7 +106,9 @@ table tr th {
 </style>
 </head>
 <body>
-
+<div class="row">
+    <div id="header" class="col-12 col-s-12"></div>
+</div>
 <div class="row">
   <div id="main" class="col-12 col-s-12"></div>
 </div>
@@ -918,7 +920,8 @@ table tr th {
     }
 
     draw_top_menu = function(page_name) {
-        main_content = document.getElementById("main");
+        header_content = document.getElementById("header");
+        removeAllChildElements(header_content);
 
         top_menus_element = document.createElement("div");
         top_menus_element.setAttribute("id", "top_menu");
@@ -951,7 +954,7 @@ table tr th {
 
         top_menus_element.appendChild(span);
 
-        main_content.appendChild(top_menus_element);
+        header_content.appendChild(top_menus_element);
     }
 
     navigate_to_tables_page = function() {
@@ -1339,24 +1342,14 @@ table tr th {
                 teardown_span.appendChild(spacer_element);
             }
 
-            build_table = document.getElementById("build_table");
-            if(build_table) {
-                removeAllChildElements(build_table);
-            } else {
-                build_table = document.createElement("div");
-                build_table.setAttribute("id","build_table");
-                var content = document.getElementById("main");
-                content.appendChild(build_table);
-            }
-
-            build_table.appendChild(setup_span);
+            var content = document.getElementById("main");
+            removeAllChildElements(content);
+           
+            content.appendChild(setup_span);
             for(var i=0; i < run_spans.length; i++) {
-                build_table.appendChild(run_spans[i]);
+                content.appendChild(run_spans[i]);
             }
-            build_table.appendChild(teardown_span);
-
-         
-
+            content.appendChild(teardown_span);
         }
         send_http_request(params, callback_function);
     }
@@ -1661,7 +1654,6 @@ table tr th {
                     build_step_status_name_lookup[record["name"]] = record;
                 }
             }
-            setTimeout(refresh_build_activity, 1);
         }
         send_http_request(params, callback_function);
     }
@@ -1713,8 +1705,7 @@ table tr th {
     get_build_step_lookup();
     get_build_step_group_lookup();
     get_build_step_status_lookup();
-
-
+    setTimeout(refresh_build_activity, 5000);
     navigate_to_home_page();
 
 </script>
