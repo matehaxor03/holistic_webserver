@@ -27,6 +27,10 @@ table {
     width: 100%;
 }
 
+.font-size-xx-small {
+    font-size:xx-small;
+}
+
 th {
     color: #ffffff;
 }
@@ -1304,7 +1308,7 @@ table tr th {
 
             for(var i=0; i<setup.length; i++) {
                 const button = document.createElement("button");
-                button.setAttribute("class", "menu button");
+                button.setAttribute("class", "menu button font-size-xx-small");
                 append_build_step_status_colour(button, setup[i]["build_step_status_name"]);
                 button_text = document.createTextNode(translate_step_name(setup[i]["build_step_name"]));
                 button.appendChild(button_text);
@@ -1320,7 +1324,7 @@ table tr th {
                 var found_tests = false;
                 for(var j=0; j<current_run_column.length; j++) {
                     const button = document.createElement("button");
-                    button.setAttribute("class", "menu button");
+                    button.setAttribute("class", "menu button font-size-xx-small");
                     append_build_step_status_colour(button, current_run_column[j]["build_step_status_name"]);
                     var button_text = "";
                     if(current_run_column[j]["build_step_name"] !== "Run_IntegrationTestSuite") {
@@ -1347,18 +1351,13 @@ table tr th {
                     }
                 }
 
-                if(found_tests) {
-                    span_col.setAttribute("class", "col-3 col-s-3");
-                } else {
-                    span_col.setAttribute("class", "col-1 col-s-1");
-                }
-
+                span_col.setAttribute("class", "col-1 col-s-1");
                 run_spans.push(span_col);
             }
 
             for(var i=0; i<teardown.length; i++) {
                 const button = document.createElement("button");
-                button.setAttribute("class", "menu button");
+                button.setAttribute("class", "menu button font-size-xx-small");
                 append_build_step_status_colour(button, teardown[i]["build_step_status_name"]);
                 button_text = document.createTextNode(translate_step_name(teardown[i]["build_step_name"]));
                 button.appendChild(button_text);
