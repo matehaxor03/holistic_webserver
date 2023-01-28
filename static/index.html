@@ -1248,11 +1248,46 @@ table tr th {
        }
     }
 
-    show_build = function(payload) {
+    var current_branch_instance_step_log_id = 0;
+    poll_console_output = function(payload) {
         if(!payload["branch_instance_id"]) {
             return;
         }
 
+        var console_span = document.getElementById("console_output_branch_instance_id" + payload["branch_instance_id"]);
+        if(!console_span) {
+            return;
+        }
+
+        var params = {"[queue]":"ReadRecords_BranchInstanceStepLog","[select_fields]":["branch_instance_step_log_id", "log","stdout"],"[where_fields]":{"branch_instance_id":payload["branch_instance_id"], "branch_instance_step_log_id":current_branch_instance_step_log_id},"[where_fields_logic]":{"branch_instance_step_log_id":">"},"[order_by]":[{"branch_instance_step_log_id":"ascending"}]};
+        var callback_function = function(result) {
+            if(result["[errors]"]) {
+                setTimeout(poll_console_output, 1000, payload);
+                return;
+            }
+
+            var console_span = document.getElementById("console_output_branch_instance_id" + payload["branch_instance_id"]);
+            if(!console_span) {
+                return;
+            }
+
+            var length = result["data"].length;
+            for(var i = 0; i < length; i++) {
+                var console_output = document.createElement("div");
+                var console_output_text = document.createTextNode(result["data"][i]["log"]);
+                console_output.appendChild(console_output_text);
+                console_span.appendChild(console_output);
+            }
+
+            if(length > 0) {
+                current_branch_instance_step_log_id = result["data"][length-1]["branch_instance_step_log_id"];
+            }
+            setTimeout(poll_console_output, 1000, payload);
+        }
+        send_http_request(params, callback_function);
+    }
+
+    show_build = function(payload) {
         var params = {"[queue]":"ReadRecords_BranchInstanceStep","[select_fields]":["build_step_id","build_step_group_id","build_step_status_id","order","parameters"],"[where_fields]":{"branch_instance_id":payload["branch_instance_id"]},"[order_by]":[{"branch_instance_step_id":"ascending"},{"order":"ascending"}]};
         var callback_function = function(result) {
             if(result["[errors]"]) {
@@ -1368,13 +1403,39 @@ table tr th {
             }
 
             var content = document.getElementById("main");
-            removeAllChildElements(content);
-           
-            content.appendChild(setup_span);
-            for(var i=0; i < run_spans.length; i++) {
-                content.appendChild(run_spans[i]);
+            var build_content = document.getElementById("build_id");
+            if(!build_content) {
+                build_content = document.createElement("span");
+                build_content.setAttribute("id", "build_id");
+                document.getElementById("main").appendChild(build_content);
             }
-            content.appendChild(teardown_span);
+            removeAllChildElements(build_content);
+           
+            build_content.appendChild(setup_span);
+            for(var i=0; i < run_spans.length; i++) {
+                build_content.appendChild(run_spans[i]);
+            }
+            build_content.appendChild(teardown_span);
+
+            remaining_columns = 12 - 2 - run.length;
+            console_columns = remaining_columns;
+            if(console_columns <= 4){
+                console_columns = 12;
+            }
+
+            if(payload["branch_instance_id"]) {
+                console_span = document.getElementById("console_output_branch_instance_id" + payload["branch_instance_id"]);
+                if(!console_span) {
+                    console_span = document.createElement("span");
+                    console_span.setAttribute("class", "col-" + console_columns + " col-s-" + console_columns);
+                    if(payload["branch_instance_id"]) {
+                        console_span.setAttribute("id", "console_output_branch_instance_id" + payload["branch_instance_id"]);
+                    }
+                    content.appendChild(console_span);
+                    current_branch_instance_step_log_id = 0;
+                    setTimeout(poll_console_output, 1, payload);
+                }
+            }
             setTimeout(show_build, 5000, payload);
         }
         send_http_request(params, callback_function);
