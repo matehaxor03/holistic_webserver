@@ -113,7 +113,7 @@ table tr th {
   <div id="main" class="col-12 col-s-12"></div>
 </div>
 <div class="row">
-    <div id="footer" class="col-12 col-s-12" style="position:fixed; bottom:0;"></div>
+    <div id="footer" class="col-12 col-s-12" style="bottom:0;"></div>
 </div>
 </body>
 
@@ -161,7 +161,7 @@ table tr th {
         http.onreadystatechange = function() { 
             if (http.readyState == 4) {
                 var result = {};
-                //try {
+                try {
                     result = JSON.parse(http.responseText);
                     result["[http_status]"] = http.status;
                     callback_function(result);
@@ -171,14 +171,14 @@ table tr th {
                     } else {
                         console.log(JSON.stringify(result));
                     }
-                //} catch(ex) {
-                //    result = {};
-                //    result["[queue]"] = "unknown"
-                //    result["[errors]"] = [ex.toString()];
-                //    result["[http_status]"] = http.status;
-                //    callback_function(result);
-                //    console.error(JSON.stringify(result));
-                //}
+                } catch(ex) {
+                    result = {};
+                    result["[queue]"] = "unknown"
+                    result["[errors]"] = [ex.toString()];
+                    result["[http_status]"] = http.status;
+                    callback_function(result);
+                    console.error(JSON.stringify(result));
+                }
             }
         }
         http.open('POST', url + "/" + params["[queue]"], true);
@@ -1221,6 +1221,29 @@ table tr th {
         return name;
     }
 
+    append_build_step_status_colour = function(element, name) {
+        if(!element.getAttribute("style")) {
+            element.setAttribute("style", "");
+        }
+
+        switch(name) {
+        case "Not Started":
+            element.setAttribute("style", element.getAttribute("style") + " background-color:grey; color:white");
+            break;
+        case "Running":
+            element.setAttribute("style", element.getAttribute("style") + " background-color:blue; color:white");
+            break;
+        case "Passed":
+            element.setAttribute("style", element.getAttribute("style") + " background-color:seagreen; color:white");
+            break;
+        case "Failed":
+            element.setAttribute("style", element.getAttribute("style") + " background-color:lightpink; color:white");
+            break;
+        default:
+            break;
+       }
+    }
+
     show_build = function(payload) {
         if(!payload["branch_instance_id"]) {
             return;
@@ -1282,6 +1305,7 @@ table tr th {
             for(var i=0; i<setup.length; i++) {
                 const button = document.createElement("button");
                 button.setAttribute("class", "menu button");
+                append_build_step_status_colour(button, setup[i]["build_step_status_name"]);
                 button_text = document.createTextNode(translate_step_name(setup[i]["build_step_name"]));
                 button.appendChild(button_text);
                 setup_span.appendChild(button);
@@ -1297,6 +1321,7 @@ table tr th {
                 for(var j=0; j<current_run_column.length; j++) {
                     const button = document.createElement("button");
                     button.setAttribute("class", "menu button");
+                    append_build_step_status_colour(button, current_run_column[j]["build_step_status_name"]);
                     var button_text = "";
                     if(current_run_column[j]["build_step_name"] !== "Run_IntegrationTestSuite") {
                         button_text = document.createTextNode((current_run_column[j]["build_step_name"]).replace("Run_", ""));
@@ -1334,6 +1359,7 @@ table tr th {
             for(var i=0; i<teardown.length; i++) {
                 const button = document.createElement("button");
                 button.setAttribute("class", "menu button");
+                append_build_step_status_colour(button, teardown[i]["build_step_status_name"]);
                 button_text = document.createTextNode(translate_step_name(teardown[i]["build_step_name"]));
                 button.appendChild(button_text);
                 teardown_span.appendChild(button);
@@ -1350,6 +1376,7 @@ table tr th {
                 content.appendChild(run_spans[i]);
             }
             content.appendChild(teardown_span);
+            setTimeout(show_build, 5000, payload);
         }
         send_http_request(params, callback_function);
     }
