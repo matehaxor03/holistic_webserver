@@ -8,6 +8,12 @@
   box-sizing: border-box;
 }
 
+.truncate {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .row::after {
   content: "";
   clear: both;
@@ -56,6 +62,11 @@ table tr th {
   color: black;
   background-color: white;
   border: 1px solid black;
+}
+
+.terminal-output {
+    background-color: black;
+    color: white;
 }
 
 .top_navigation_button {
@@ -1274,9 +1285,10 @@ table tr th {
             var length = result["data"].length;
             for(var i = 0; i < length; i++) {
                 var console_output = document.createElement("div");
+                console_output.setAttribute("class", "terminal-output font-size-xx-small")
                 var console_output_text = document.createTextNode(result["data"][i]["log"]);
                 console_output.appendChild(console_output_text);
-                console_span.appendChild(console_output);
+                console_span.prepend(console_output);
             }
 
             if(length > 0) {
@@ -1343,7 +1355,7 @@ table tr th {
 
             for(var i=0; i<setup.length; i++) {
                 const button = document.createElement("button");
-                button.setAttribute("class", "menu button font-size-xx-small");
+                button.setAttribute("class", "menu button font-size-xx-small truncate");
                 append_build_step_status_colour(button, setup[i]["build_step_status_name"]);
                 button_text = document.createTextNode(translate_step_name(setup[i]["build_step_name"]));
                 button.appendChild(button_text);
@@ -1359,7 +1371,7 @@ table tr th {
                 var found_tests = false;
                 for(var j=0; j<current_run_column.length; j++) {
                     const button = document.createElement("button");
-                    button.setAttribute("class", "menu button font-size-xx-small");
+                    button.setAttribute("class", "menu button font-size-xx-small truncate");
                     append_build_step_status_colour(button, current_run_column[j]["build_step_status_name"]);
                     var button_text = "";
                     if(current_run_column[j]["build_step_name"] !== "Run_IntegrationTestSuite") {
@@ -1392,7 +1404,7 @@ table tr th {
 
             for(var i=0; i<teardown.length; i++) {
                 const button = document.createElement("button");
-                button.setAttribute("class", "menu button font-size-xx-small");
+                button.setAttribute("class", "menu button font-size-xx-small truncate");
                 append_build_step_status_colour(button, teardown[i]["build_step_status_name"]);
                 button_text = document.createTextNode(translate_step_name(teardown[i]["build_step_name"]));
                 button.appendChild(button_text);
