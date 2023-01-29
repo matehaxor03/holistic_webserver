@@ -1243,16 +1243,16 @@ table tr th {
 
         switch(name) {
         case "Not Started":
-            element.setAttribute("style", element.getAttribute("style") + " background-color:grey; color:white");
+            element.setAttribute("style", element.getAttribute("style") + " background-color:grey; color:white; width:100%; border-bottom-style: solid; border-bottom-color: white;");
             break;
         case "Running":
-            element.setAttribute("style", element.getAttribute("style") + " background-color:blue; color:white");
+            element.setAttribute("style", element.getAttribute("style") + " background-color:blue; color:white; width:100%; border-bottom-style: solid; border-bottom-color: white;");
             break;
         case "Passed":
-            element.setAttribute("style", element.getAttribute("style") + " background-color:seagreen; color:white");
+            element.setAttribute("style", element.getAttribute("style") + " background-color:seagreen; color:white; width:100%; border-bottom-style: solid; border-bottom-color: white;");
             break;
         case "Failed":
-            element.setAttribute("style", element.getAttribute("style") + " background-color:lightpink; color:white");
+            element.setAttribute("style", element.getAttribute("style") + " background-color:lightpink; color:white; width:100%; border-bottom-style: solid; border-bottom-color: white;");
             break;
         default:
             break;
@@ -1354,15 +1354,12 @@ table tr th {
             var run_spans = [];
 
             for(var i=0; i<setup.length; i++) {
-                const button = document.createElement("button");
-                button.setAttribute("class", "menu button font-size-xx-small truncate");
+                const button = document.createElement("span");
+                button.setAttribute("class", "font-size-xx-small truncate col-1 col-s-1");
                 append_build_step_status_colour(button, setup[i]["build_step_status_name"]);
                 button_text = document.createTextNode(translate_step_name(setup[i]["build_step_name"]));
                 button.appendChild(button_text);
                 setup_span.appendChild(button);
-
-                spacer_element = document.createElement("br");
-                setup_span.appendChild(spacer_element);
             }
 
             for(var i=0;i<run.length;i++) {
@@ -1370,8 +1367,8 @@ table tr th {
                 const span_col = document.createElement("span");                
                 var found_tests = false;
                 for(var j=0; j<current_run_column.length; j++) {
-                    const button = document.createElement("button");
-                    button.setAttribute("class", "menu button font-size-xx-small truncate");
+                    const button = document.createElement("span");
+                    button.setAttribute("class", "font-size-xx-small truncate col-1 col-s-1");
                     append_build_step_status_colour(button, current_run_column[j]["build_step_status_name"]);
                     var button_text = "";
                     if(current_run_column[j]["build_step_name"] !== "Run_IntegrationTestSuite") {
@@ -1387,11 +1384,7 @@ table tr th {
                     }
 
                     button.appendChild(button_text);
-                  
                     span_col.appendChild(button);
-
-                    spacer_element = document.createElement("br");
-                    span_col.appendChild(spacer_element);
 
                     if(current_run_column[j]["build_step_name"] === "Run_IntegrationTests") {
                         found_tests = true;
@@ -1403,15 +1396,12 @@ table tr th {
             }
 
             for(var i=0; i<teardown.length; i++) {
-                const button = document.createElement("button");
-                button.setAttribute("class", "menu button font-size-xx-small truncate");
+                const button = document.createElement("span");
+                button.setAttribute("class", "font-size-xx-small truncate col-1 col-s-1");
                 append_build_step_status_colour(button, teardown[i]["build_step_status_name"]);
                 button_text = document.createTextNode(translate_step_name(teardown[i]["build_step_name"]));
                 button.appendChild(button_text);
                 teardown_span.appendChild(button);
-
-                spacer_element = document.createElement("br");
-                teardown_span.appendChild(spacer_element);
             }
 
             var content = document.getElementById("main");
@@ -1429,17 +1419,11 @@ table tr th {
             }
             build_content.appendChild(teardown_span);
 
-            remaining_columns = 12 - 2 - run.length;
-            console_columns = remaining_columns;
-            if(console_columns <= 4){
-                console_columns = 12;
-            }
-
             if(payload["branch_instance_id"]) {
                 console_span = document.getElementById("console_output_branch_instance_id" + payload["branch_instance_id"]);
                 if(!console_span) {
                     console_span = document.createElement("span");
-                    console_span.setAttribute("class", "col-" + console_columns + " col-s-" + console_columns);
+                    console_span.setAttribute("class", "col-6 col-s-6");
                     if(payload["branch_instance_id"]) {
                         console_span.setAttribute("id", "console_output_branch_instance_id" + payload["branch_instance_id"]);
                     }
