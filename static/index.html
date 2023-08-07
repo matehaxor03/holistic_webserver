@@ -715,6 +715,8 @@ table tr th {
                 return;
             }
 
+            var foreign_key_query_data = {};
+
             const top_back_button = document.createElement("button");
             top_back_button.setAttribute("class", "button");
             top_back_button.setAttribute("id", "backRecordButton");
@@ -780,7 +782,6 @@ table tr th {
                 column_names_sorted.push("name");
             }
 
-           
             const table = document.createElement("table");
             for(var i = 0; i < records.length; i++) {
                 var current_record = records[i];
@@ -841,7 +842,8 @@ table tr th {
                                 const editButton = document.createElement("a");
                                 editButton.setAttribute("rel", "tag");
                                 editButton.setAttribute("href", "#");
-                                const editButtonText = document.createTextNode(current_record[currentColumnName]);
+                                editButton.setAttribute("class", "quick-replace-table-name-" + schema[currentColumnName]["foreign_key_table_name"] + "-column-name-" + currentColumnName + "-id-" + current_record[currentColumnName]);
+                                const editButtonText = document.createTextNode("loading...");
                                 var edit_function = function (table_name, id) {
                                     var _table_name = table_name.split('').join('');
                                     var _id = Object.assign({}, id);
@@ -855,6 +857,24 @@ table tr th {
                                 editButton.onclick = edit_function(schema[currentColumnName]["foreign_key_table_name"], temp_identifier);
                                 editButton.appendChild(editButtonText);
                                 rowColumnData.appendChild(editButton);
+
+                                if(!foreign_key_query_data[schema[currentColumnName]["foreign_key_table_name"]]) {
+                                    var _data = {};
+                                    foreign_key_query_data[schema[currentColumnName]["foreign_key_table_name"]] = _data;
+                                }
+
+                                if(!foreign_key_query_data[schema[currentColumnName]["foreign_key_table_name"]]["foreign_key_column_name"]) {
+                                    foreign_key_query_data[schema[currentColumnName]["foreign_key_table_name"]]["foreign_key_column_name"] = currentColumnName;
+                                }
+
+                                if(!foreign_key_query_data[schema[currentColumnName]["foreign_key_table_name"]]["foreign_key_ids"]) {
+                                    var _data2 = [];
+                                    foreign_key_query_data[schema[currentColumnName]["foreign_key_table_name"]]["foreign_key_ids"] = _data2;
+                                }
+
+                                if(!foreign_key_query_data[schema[currentColumnName]["foreign_key_table_name"]]["foreign_key_ids"].includes(current_record[currentColumnName])) {
+                                    foreign_key_query_data[schema[currentColumnName]["foreign_key_table_name"]]["foreign_key_ids"].push(current_record[currentColumnName]);
+                                }
                             }
                         }
 
@@ -912,8 +932,63 @@ table tr th {
             main_content.appendChild(table);
             main_content.appendChild(bottom_back_button);
 
+            {
+                var foreign_key_table_names = Object.keys(foreign_key_query_data);
+                console.log(foreign_key_table_names);
+                for(var _i = 0; _i < foreign_key_table_names.length; _i++) {
+                    var _temp_message_type = "ReadRecords_" + decodeURIComponent(foreign_key_table_names[_i]);
+                    var _foreign_key_details = foreign_key_query_data[foreign_key_table_names[_i]];
+                    var _foreign_key_column_name = _foreign_key_details["foreign_key_column_name"];
+                    var _foreign_key_ids = _foreign_key_details["foreign_key_ids"];
+                    var _where_fields_value = {};
+                    _where_fields_value[_foreign_key_column_name] = _foreign_key_ids;
+                    var _where_fields_logic_value = {};
+                    _where_fields_logic_value[_foreign_key_column_name] = "in";
+                    var _params = {"[queue]":_temp_message_type,"[select_fields]":["[minimal_fields]"],"[include_schema]":true, "[where_fields]":_where_fields_value, "[where_fields_logic]":_where_fields_logic_value};
 
-            console.log(result);
+                    var _callback_function = function(_result) {
+                        var _message_type = Object.keys(_result)[0];
+                        if(_result["[errors]"]) {
+                            return;
+                        }
+
+                        var _payload = _result;
+                        var _queue_name = _payload["[queue]"];
+                        var _records = _payload["data"];
+                        var _table_name = _queue_name.substring(_queue_name.indexOf("_")+1);
+
+                        for(var _i=0; _i<_records.length; _i++) {
+                            var _current_record = _records[_i];
+                            var _name_found = false;
+                            if(_current_record["name"]) {
+                                _name_found = true;
+                            }
+
+                            var _name = _current_record["name"];
+                            if(_name_found) {
+                                delete _current_record["name"];    
+                            }
+                            var _column_name = Object.keys(_current_record)[0];
+                            var _column_value = _current_record[_column_name];
+                            var _quick_replace_class_name = "quick-replace-table-name-" + _table_name + "-column-name-" + _column_name + "-id-" + _column_value;
+
+                            var _quick_replace_elements = document.getElementsByClassName(_quick_replace_class_name);
+                            for(var _j=0;_j<_quick_replace_elements.length;_j++) {
+                                removeAllChildElements(_quick_replace_elements[_j]);
+                                var _quick_replace_text;
+                                if(_name_found) {
+                                    _quick_replace_text = document.createTextNode(_name);
+                                } else {
+                                    _quick_replace_text = document.createTextNode(_column_value);
+                                }
+                                _quick_replace_elements[_j].appendChild(_quick_replace_text);
+                            }
+                        }
+                    }
+                    send_http_request(_params, _callback_function);
+                }
+               
+            }
         }
         send_http_request(params, callback_function);
     }
