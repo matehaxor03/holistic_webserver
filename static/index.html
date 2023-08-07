@@ -956,6 +956,23 @@ table tr th {
                         var _queue_name = _payload["[queue]"];
                         var _records = _payload["data"];
                         var _table_name = _queue_name.substring(_queue_name.indexOf("_")+1);
+                        var _schema = _payload["schema"];
+                        var _primary_key_auto_increment = "";
+
+                        var _column_definitions = Object.keys(_schema);
+                        for(var _i=0; _i < _column_definitions.length; _i++) {
+                            var _current_column_definition = _schema[_column_definitions[_i]];
+                            if(!_current_column_definition["primary_key"]) {
+                                continue;
+                            }
+
+                            if(!_current_column_definition["auto_increment"]) {
+                                continue;
+                            }
+
+                            _primary_key_auto_increment = _column_definitions[_i];
+                            break;
+                        }
 
                         for(var _i=0; _i<_records.length; _i++) {
                             var _current_record = _records[_i];
@@ -965,10 +982,7 @@ table tr th {
                             }
 
                             var _name = _current_record["name"];
-                            if(_name_found) {
-                                delete _current_record["name"];    
-                            }
-                            var _column_name = Object.keys(_current_record)[0];
+                            var _column_name = _primary_key_auto_increment;
                             var _column_value = _current_record[_column_name];
                             var _quick_replace_class_name = "quick-replace-table-name-" + _table_name + "-column-name-" + _column_name + "-id-" + _column_value;
 
