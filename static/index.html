@@ -689,9 +689,24 @@ table tr th {
         }
         send_http_request(params, callback_function);
     }
+
+    var get_number_of_records_for_table = function(table_name) {
+        table_name = table_name.replace(/\\\"/g, "\"");
+        var temp_message_type = "GetTableCount_" + decodeURIComponent(table_name);
+        var params = {"[queue]":temp_message_type};
+        var callback_function = function(result) {
+            if(result["[errors]"]) {
+                return;
+            }
+
+            var records = result["data"];
+        }
+        send_http_request(params, callback_function);    
+    }
     
 
     var navigate_to_view_table = function(table_name) {
+        get_number_of_records_for_table(table_name);
         reset_view_state();
         table_name = table_name.replace(/\\\"/g, "\"");
         document.title = "Holistic View Table " + table_name + " page";

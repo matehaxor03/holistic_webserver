@@ -47,6 +47,7 @@ func NewWebServer(port string, server_crt_path string, server_key_path string, q
 	controllers["Run_Sync"], _ = NewWebServerController("Run_Sync", queue_domain_name, getQueuePort())
 
 	for _, table_name := range table_names {
+		controllers["GetTableCount_"+table_name], _ = NewWebServerController("GetTableCount_"+table_name, getQueueDomainName(), getQueuePort())
 		controllers["CreateRecords_"+table_name], _ = NewWebServerController("CreateRecords_"+table_name, getQueueDomainName(), getQueuePort())
 		controllers["CreateRecord_"+table_name], _ = NewWebServerController("CreateRecord_"+table_name, getQueueDomainName(), getQueuePort())
 		controllers["ReadRecords_"+table_name], _ = NewWebServerController("ReadRecords_"+table_name, getQueueDomainName(), getQueuePort())
