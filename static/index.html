@@ -707,7 +707,12 @@ table tr th {
         var event_function = function(_table_name, _i) {
             var __table_name = _table_name;
             var __i = _i;
+            var __clicked = false;
             var func = function() {
+                if(__clicked) {
+                    return;
+                }
+                __clicked = true;
                 navigate_to_view_table(__table_name, __i);
             }
             return func;
@@ -725,40 +730,30 @@ table tr th {
 
         if(page_index != 0) {
             {
-                var span = document.createElement("span");
-                span.setAttribute("class", "button menu col-1 col-s-1");
+                var button = document.createElement("a");
+                button.setAttribute("class", "button menu col-1 col-s-1");
                 var link = document.createElement("a");
-                link.setAttribute("rel", "tag");
-                link.setAttribute("href", "#");
-                {
-                    span.addEventListener("click", event_function(table_name, previous_min_index));
-                    link.addEventListener("click", event_function(table_name, previous_min_index));
-                }
-            
+                button.setAttribute("rel", "tag");
+                button.setAttribute("href", "#");
+                button.addEventListener("click", event_function(table_name, previous_min_index));
                 var text = document.createTextNode("<<");
-                link.appendChild(text);
-                span.appendChild(link);
-                pages.appendChild(span);
+                button.appendChild(text);
+                pages.appendChild(button);
             }
         }
         
         var number_of_displayed_pages = 0;
         for(var i=page_index; i < max_page_index; i++) {
             {
-                var span = document.createElement("span");
-                span.setAttribute("class", "button menu col-1 col-s-1");
+                var button = document.createElement("a");
+                button.setAttribute("class", "button menu col-1 col-s-1");
                 var link = document.createElement("a");
-                link.setAttribute("rel", "tag");
-                link.setAttribute("href", "#");
-                {
-                    span.addEventListener("click", event_function(table_name, i));
-                    link.addEventListener("click", event_function(table_name, i));
-                }
-            
-                var text = document.createTextNode((i+1) + " ");
-                link.appendChild(text);
-                span.appendChild(link);
-                pages.appendChild(span);
+                button.setAttribute("rel", "tag");
+                button.setAttribute("href", "#");
+                button.addEventListener("click", event_function(table_name, i));
+                var text = document.createTextNode(i+1);
+                button.appendChild(text);
+                pages.appendChild(button);
             }
             
             number_of_displayed_pages++;
@@ -769,20 +764,15 @@ table tr th {
 
         if((page_index + 10) < max_page_index) {
             {
-                var span = document.createElement("span");
-                span.setAttribute("class", "button menu col-1 col-s-1");
+                var button = document.createElement("a");
+                button.setAttribute("class", "button menu col-1 col-s-1");
                 var link = document.createElement("a");
-                link.setAttribute("rel", "tag");
-                link.setAttribute("href", "#");
-                {
-                    span.addEventListener("click", event_function(table_name, next_max_index));
-                    link.addEventListener("click", event_function(table_name, next_max_index));
-                }
-            
+                button.setAttribute("rel", "tag");
+                button.setAttribute("href", "#");
+                button.addEventListener("click", event_function(table_name, next_max_index));
                 var text = document.createTextNode(">>");
-                link.appendChild(text);
-                span.appendChild(link);
-                pages.appendChild(span);
+                button.appendChild(text);
+                pages.appendChild(button);
             }
         }
         
