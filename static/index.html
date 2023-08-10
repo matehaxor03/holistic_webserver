@@ -64,6 +64,11 @@ table tr th {
   border: 1px solid black;
 }
 
+.spacer {
+  padding: 5px;
+  margin-bottom: 5px;
+}
+
 .terminal-output {
     background-color: black;
     color: white;
@@ -696,6 +701,7 @@ table tr th {
             return;
         }
         removeAllChildElements(pages);
+
         var min_page_index = 0;
         var max_page_index = 0;
         if (number_of_records % PAGE_SIZE == 0) {
@@ -728,6 +734,31 @@ table tr th {
             next_max_index = max_page_index;
         }
 
+        {
+            var div = document.createElement("div");
+            div.setAttribute("class", "spacer col-12 col-s-12");
+            var record_count_text_span = document.createElement("span");
+            var record_count_text_value = ((page_index*PAGE_SIZE)+1) + " of " + number_of_records;
+          
+            if(number_of_records == 0) {
+                record_count_text_value = "no records found";
+            } else if(number_of_records == 1) {
+                record_count_text_value += " record";
+            } else {
+                record_count_text_value += " records";
+            }
+
+            var record_count_text = document.createTextNode(record_count_text_value); 
+            var spacer = document.createElement("br");
+            record_count_text_span.appendChild(record_count_text);
+            record_count_text_span.setAttribute("class", "col-12 col-s-12");
+            record_count_text_span.setAttribute("style", "text-align: center;");
+            div.appendChild(record_count_text_span);
+            div.appendChild(spacer);
+            pages.appendChild(div);
+        }
+
+        var page_buttons_added = 0;
         if(page_index != 0) {
             {
                 var button = document.createElement("a");
@@ -739,6 +770,7 @@ table tr th {
                 var text = document.createTextNode("<<");
                 button.appendChild(text);
                 pages.appendChild(button);
+                page_buttons_added++;
             }
         }
         
@@ -754,6 +786,7 @@ table tr th {
                 var text = document.createTextNode(i+1);
                 button.appendChild(text);
                 pages.appendChild(button);
+                page_buttons_added++;
             }
             
             number_of_displayed_pages++;
@@ -773,18 +806,19 @@ table tr th {
                 var text = document.createTextNode(">>");
                 button.appendChild(text);
                 pages.appendChild(button);
+                page_buttons_added++;
             }
         }
-        
-        var pages_count;
-        if(number_of_records == 1) {
-            pages_count = document.createTextNode(number_of_records + " record");
-        } else {
-            pages_count = document.createTextNode(number_of_records + " records");
+
+        {
+            for(var i=0; i < 12 - page_buttons_added; i++) {
+                var div = document.createElement("div");
+                div.setAttribute("class", "spacer col-1 col-s-1");
+                var spacer = document.createElement("br");
+                div.appendChild(spacer);
+                pages.appendChild(div);
+            }
         }
-
-
-        pages.appendChild(pages_count);
     }
 
     var get_number_of_records_for_table = function(page_index, table_name) {
