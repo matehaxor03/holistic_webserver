@@ -165,6 +165,10 @@ table tr th {
     }
     
     var removeAllChildElements = function(element) {
+        if(!element) {
+            return;
+        }
+
         if(element == null) {
             return;
         }
@@ -709,6 +713,7 @@ table tr th {
         } else {
             max_page_index = (number_of_records / PAGE_SIZE);
         }
+        max_page_index = parseInt(max_page_index, 10);
 
         var event_function = function(_table_name, _i) {
             var __table_name = _table_name;
@@ -737,7 +742,8 @@ table tr th {
         {
             var div = document.createElement("div");
             div.setAttribute("class", "spacer col-12 col-s-12");
-            var record_count_text_span = document.createElement("span");
+            var record_index_details_span = document.createElement("span");
+            
             var record_count_text_value = ((page_index*PAGE_SIZE)+1) + " of " + number_of_records;
           
             if(number_of_records == 0) {
@@ -747,13 +753,87 @@ table tr th {
             } else {
                 record_count_text_value += " records";
             }
-
+            
+            var record_count_span = document.createElement("span");
             var record_count_text = document.createTextNode(record_count_text_value); 
+            record_count_span.appendChild(record_count_text);
+            record_count_span.setAttribute("style", "float: right;");
+
+            var page_label = document.createElement("span");
+            var page_label_text = document.createTextNode("page: ");
+            page_label.appendChild(page_label_text);
+
+            var page_input_span = document.createElement("span");
+            page_input_span.setAttribute("style", "text-align: center;");
+
+            var page_input = document.createElement("input");
+            var page_input_size = (max_page_index+1).toString().length;
+            page_input.setAttribute("type", "number");
+            page_input.setAttribute("value", (page_index+1));
+            page_input.setAttribute("maxlength", page_input_size);
+            page_input.setAttribute("size", page_input_size);
+            page_input.setAttribute("minlength", 1);
+            page_input.setAttribute("min", 1);
+            page_input.setAttribute("max", (max_page_index+1));
+            page_input.setAttribute("id", "current_page_number");
+
+            var navigate_page_function = function(event, onchange) {
+                if (event.key === "Enter" || onchange) {
+                    event.preventDefault();
+
+                    var current_page_element = document.getElementById("current_page_number");
+                    if(!current_page_element) {
+                        return;
+                    }
+
+                    var current_page_value = current_page_element.value;
+                    if(!current_page_value) {
+                        return;
+                    }
+
+                    if(current_page_value === "") {
+                        return;
+                    }
+
+                    var current_page_value_int = parseInt(current_page_value);
+                    if(current_page_value_int <= 0) {
+                        current_page_value_int = 1;
+                    }
+
+                    if(current_page_value_int > (max_page_index+1)) {
+                        current_page_value_int = max_page_index+1;
+                    }
+
+                    navigate_to_view_table(table_name, (current_page_value_int-1));
+                }
+            }
+
+            page_input.addEventListener("keypress", function(event) {
+                navigate_page_function(event, false);
+            });
+
+            page_input.addEventListener("change", function(event) {
+                navigate_page_function(event, true);
+            });
+
+
+            var page_count_element = document.createElement("span");
+            var page_count_element_value =  document.createTextNode(" of " + (max_page_index+1));
+            page_count_element.appendChild(page_count_element_value);
+            
+            page_input_span.appendChild(page_label);
+            page_input_span.appendChild(page_input);
+            page_input_span.appendChild(page_count_element);
+
+
             var spacer = document.createElement("br");
-            record_count_text_span.appendChild(record_count_text);
-            record_count_text_span.setAttribute("class", "col-12 col-s-12");
-            record_count_text_span.setAttribute("style", "text-align: center;");
-            div.appendChild(record_count_text_span);
+
+            record_index_details_span.appendChild(page_input_span);
+            record_index_details_span.appendChild(record_count_span);
+            record_index_details_span.setAttribute("class", "col-12 col-s-12");
+            record_index_details_span.setAttribute("style", "text-align: center;");
+            
+            div.appendChild(record_index_details_span);
             div.appendChild(spacer);
             pages.appendChild(div);
         }
@@ -775,7 +855,7 @@ table tr th {
         }
         
         var number_of_displayed_pages = 0;
-        for(var i=page_index; i < max_page_index; i++) {
+        for(var i=page_index; i <= max_page_index; i++) {
             {
                 var button = document.createElement("a");
                 button.setAttribute("class", "button menu col-1 col-s-1");
