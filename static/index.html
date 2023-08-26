@@ -1049,15 +1049,19 @@ table tr th {
                                 const editButtonText = document.createTextNode(current_record[currentColumnName]);
                                 var edit_function = function (table_name, id) {
                                     var _table_name = table_name.split('').join('');
-                                    var _id = Object.assign({}, id);
+                                    var _id = Object.assign([], id);
                                     var x = function() {
                                         navigate_to_manage_record(_table_name, page_index, _id, "update");
                                     }
                                     return x;
                                 }
+                                var temp_identifier_array = [];
                                 var temp_identifier = {};
-                                temp_identifier[currentColumnName] = current_record[currentColumnName];
-                                editButton.onclick = edit_function(table_name, temp_identifier);
+                                temp_identifier["column"] = currentColumnName;
+                                temp_identifier["value"] = current_record[currentColumnName];
+                                temp_identifier["logic"] = "=";
+                                temp_identifier_array.push(temp_identifier);
+                                editButton.onclick = edit_function(table_name, temp_identifier_array);
                                 editButton.appendChild(editButtonText);
                                 rowColumnData.appendChild(editButton);
                             }
@@ -1070,15 +1074,19 @@ table tr th {
                                 const editButtonText = document.createTextNode("loading...");
                                 var edit_function = function (table_name, id) {
                                     var _table_name = table_name.split('').join('');
-                                    var _id = Object.assign({}, id);
+                                    var _id = Object.assign([], id);
                                     var x = function() {
                                         navigate_to_manage_record(_table_name, page_index, _id, "update");
                                     }
                                     return x;
                                 }
+                                var temp_identifier_array = [];
                                 var temp_identifier = {};
-                                temp_identifier[currentColumnName] = current_record[currentColumnName];
-                                editButton.onclick = edit_function(schema[currentColumnName]["foreign_key_table_name"], temp_identifier);
+                                temp_identifier["column"] = currentColumnName;
+                                temp_identifier["value"] = current_record[currentColumnName];
+                                temp_identifier["logic"] = "=";
+                                temp_identifier_array.push(temp_identifier);
+                                editButton.onclick = edit_function(schema[currentColumnName]["foreign_key_table_name"], temp_identifier_array);
                                 editButton.appendChild(editButtonText);
                                 rowColumnData.appendChild(editButton);
 
@@ -1114,7 +1122,7 @@ table tr th {
                     viewButton.setAttribute("class", "button");
                     const viewButtonText = document.createTextNode("view");
                     var view_function = function (id) {
-                        var _id = Object.assign({}, id);
+                        var _id = Object.assign([], id);
                         var x = function() {
                             navigate_to_manage_record(table_name, page_index, _id, "view");
                         }
@@ -1128,7 +1136,7 @@ table tr th {
                     editButton.setAttribute("class", "button");
                     const editButtonText = document.createTextNode("edit");
                     var edit_function = function (id) {
-                        var _id = Object.assign({}, id);
+                        var _id = Object.assign([], id);
                         var x = function() {
                             navigate_to_manage_record(table_name, page_index, _id, "update");
                         }
@@ -1173,11 +1181,13 @@ table tr th {
                     var _foreign_key_details = foreign_key_query_data[foreign_key_table_names[_i]];
                     var _foreign_key_column_name = _foreign_key_details["foreign_key_column_name"];
                     var _foreign_key_ids = _foreign_key_details["foreign_key_ids"];
+                    var _where_fields_value_array = [];
                     var _where_fields_value = {};
-                    _where_fields_value[_foreign_key_column_name] = _foreign_key_ids;
-                    var _where_fields_logic_value = {};
-                    _where_fields_logic_value[_foreign_key_column_name] = "in";
-                    var _params = {"[queue]":_temp_message_type,"[select_fields]":["[minimal_fields]"],"[include_schema]":true, "[where_fields]":_where_fields_value, "[where_fields_logic]":_where_fields_logic_value};
+                    _where_fields_value["column"]=_foreign_key_column_name;
+                    _where_fields_value["value"]=_foreign_key_ids;
+                    _where_fields_value["logic"]="in";
+                    _where_fields_value_array.push(_where_fields_value);
+                    var _params = {"[queue]":_temp_message_type,"[select_fields]":["[minimal_fields]"],"[include_schema]":true, "[where_fields]":_where_fields_value_array};
 
                     var _callback_function = function(_result) {
                         var _message_type = Object.keys(_result)[0];
@@ -1341,7 +1351,7 @@ table tr th {
     }
 
     load_branches_for_repository = function(repository_id) {
-        var params = {"[queue]":"ReadRecords_Branch","[select_fields]":["branch_id","name"],"[where_fields]":{"repository_id":repository_id}};
+        var params = {"[queue]":"ReadRecords_Branch","[select_fields]":["branch_id","name"],"[where_fields]":[{"column":"repository_id","value":repository_id,"logic":"="}]};
         var callback_function = function(result) {
             if(result["[errors]"]) {
                 return;
@@ -1404,7 +1414,7 @@ table tr th {
     }
 
     load_repositories_for_repository_account = function(repository_account_id) {
-        var params = {"[queue]":"ReadRecords_Repository","[select_fields]":["repository_id","name"],"[where_fields]":{"repository_account_id":repository_account_id}};
+        var params = {"[queue]":"ReadRecords_Repository","[select_fields]":["repository_id","name"],"[where_fields]":[{"column":"repository_account_id","value":repository_account_id,"logic":"="}]};
         var callback_function = function(result) {
             if(result["[errors]"]) {
                 return;
@@ -1470,7 +1480,7 @@ table tr th {
     }
 
     load_repository_accounts_for_domain = function(domain_name_id) {
-        var params = {"[queue]":"ReadRecords_RepositoryAccount","[select_fields]":["repository_account_id","domain_name_id","name"],"[where_fields]":{"domain_name_id":domain_name_id}};
+        var params = {"[queue]":"ReadRecords_RepositoryAccount","[select_fields]":["repository_account_id","domain_name_id","name"],"[where_fields]":[{"column":"domain_name_id","value":domain_name_id,"logic":"="}]};
         var callback_function = function(result) {
             if(result["[errors]"]) {
                 return;
@@ -1620,7 +1630,7 @@ table tr th {
             return;
         }
 
-        var params = {"[queue]":"ReadRecords_BranchInstanceStepLog","[select_fields]":["branch_instance_step_log_id", "log","stdout"],"[where_fields]":{"branch_instance_id":payload["branch_instance_id"], "branch_instance_step_log_id":current_branch_instance_step_log_id},"[where_fields_logic]":{"branch_instance_step_log_id":">"},"[order_by]":[{"branch_instance_step_log_id":"ascending"}],"[limit]":10};
+        var params = {"[queue]":"ReadRecords_BranchInstanceStepLog","[select_fields]":["branch_instance_step_log_id", "log","stdout"],"[where_fields]":[{"column":"branch_instance_id","value":payload["branch_instance_id"],"logic":"="},{"column":"branch_instance_step_log_id","value":current_branch_instance_step_log_id,"logic":">"}],"[order_by]":[{"branch_instance_step_log_id":"ascending"}],"[limit]":10};
         var callback_function = function(result) {
             if(result["[errors]"]) {
                 setTimeout(poll_console_output, 2000, payload);
@@ -1654,7 +1664,7 @@ table tr th {
             return;
         }
                 
-        var params = {"[queue]":"ReadRecords_BranchInstanceStep","[select_fields]":["build_step_id","build_step_group_id","build_step_status_id","order","parameters"],"[where_fields]":{"branch_instance_id":payload["branch_instance_id"]},"[order_by]":[{"branch_instance_step_id":"ascending"},{"order":"ascending"}]};
+        var params = {"[queue]":"ReadRecords_BranchInstanceStep","[select_fields]":["build_step_id","build_step_group_id","build_step_status_id","order","parameters"],"[where_fields]":[{"column":"branch_instance_id","value":payload["branch_instance_id"],"logic":"="}],"[order_by]":[{"branch_instance_step_id":"ascending"},{"order":"ascending"}]};
         var callback_function = function(result) {
             if(current_branch_instance_id == 0) {
                 return;
@@ -1815,7 +1825,7 @@ table tr th {
             }
         }
 
-        var params = {"[queue]":"ReadRecords_Repository","[select_fields]":["repository_id","name"],"[where_fields]":{"repository_id":respostory_ids_array}, "[where_fields_logic]":{"repository_id":"in"}};
+        var params = {"[queue]":"ReadRecords_Repository","[select_fields]":["repository_id","name"],"[where_fields]":[{"column":"repository_id","value":respostory_ids_array,"logic":"in"}]};
         var callback_function = function(result) {
             if(result["[errors]"]) {
                 setTimeout(refresh_build_activity, 10000);
@@ -1963,7 +1973,7 @@ table tr th {
             }
         }
 
-        var params = {"[queue]":"ReadRecords_Branch","[select_fields]":["branch_id","name","repository_id"],"[where_fields]":{"branch_id":branch_ids_array}, "[where_fields_logic]":{"branch_id":"in"}};
+        var params = {"[queue]":"ReadRecords_Branch","[select_fields]":["branch_id","name","repository_id"],"[where_fields]":[{"column":"branch_id","value":branch_ids_array,"logic":"in"}]};
         var callback_function = function(result) {
             if(result["[errors]"]) {
                 setTimeout(refresh_build_activity, 10000);
@@ -2002,7 +2012,7 @@ table tr th {
             }
         }
 
-        var params = {"[queue]":"ReadRecords_BranchInstanceStep","[select_fields]":["branch_instance_id","build_step_status_id","COUNT(*)"],"[where_fields]":{"branch_instance_id":ids_array}, "[where_fields_logic]":{"branch_instance_id":"in"},"[group_by]":["branch_instance_id","build_step_status_id"]};
+        var params = {"[queue]":"ReadRecords_BranchInstanceStep","[select_fields]":["branch_instance_id","build_step_status_id","COUNT(*)"],"[where_fields]":[{"column":"branch_instance_id","value":ids_array,"logic":"in"}],"[group_by]":["branch_instance_id","build_step_status_id"]};
         var callback_function = function(result) {
             if(result["[errors]"]) {
                 setTimeout(refresh_build_activity, 10000);
@@ -2038,7 +2048,7 @@ table tr th {
         build_step_status_ids_array.push(build_step_status_name_lookup["Not Started"]["build_step_status_id"]);
         build_step_status_ids_array.push(build_step_status_name_lookup["Running"]["build_step_status_id"]);
 
-        var params = {"[queue]":"ReadRecords_BranchInstance","[select_fields]":["branch_instance_id", "branch_id", "build_step_status_id"], "[where_fields]":{"build_step_status_id":build_step_status_ids_array}, "[where_fields_logic]":{"build_step_status_id":"in"}};
+        var params = {"[queue]":"ReadRecords_BranchInstance","[select_fields]":["branch_instance_id", "branch_id", "build_step_status_id"], "[where_fields]":[{"column":"build_step_status_id","value":build_step_status_ids_array,"logic":"in"}]};
         var callback_function = function(result) {
             if(result["[errors]"]) {
                 setTimeout(refresh_build_activity, 10000);

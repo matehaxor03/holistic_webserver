@@ -1,7 +1,7 @@
 github.com/matehaxor03/holistic_common v0.0.66 h1:uTx+QJBc+4HHxadfwsqmmFtkIcFuHupaHLTUDkxwjo0=
 github.com/matehaxor03/holistic_common v0.0.66/go.mod h1:Fduzjeq/XqKGCdJsBedOS7DzfwQOqTGJtS8T2zQjeCY=
-github.com/matehaxor03/holistic_db_client v0.0.550 h1:xQneq3lt6S7f6B3CZ/0ctmHAwgmttQA1FkNiqUgLICo=
-github.com/matehaxor03/holistic_db_client v0.0.550/go.mod h1:TmKZl6L0Rl/bjXtfSLNjkufANfwYuPlwD6/HATFGIls=
+github.com/matehaxor03/holistic_db_client v0.0.553 h1:USHX5q0PJm0HbMBlfLGJ/RFATkTaek8B80nWFScJjmw=
+github.com/matehaxor03/holistic_db_client v0.0.553/go.mod h1:TmKZl6L0Rl/bjXtfSLNjkufANfwYuPlwD6/HATFGIls=
 github.com/matehaxor03/holistic_http v0.0.17 h1:P0NnoOZ9j4R7Ymci3v285zmgvvo5kSI1+EPoHknGQzw=
 github.com/matehaxor03/holistic_http v0.0.17/go.mod h1:SHKP2NLO+yzic94PBwlDjLp2/B4g3QyuF9U5OrELFV8=
 github.com/matehaxor03/holistic_json v0.0.92 h1:PFA7RIuArnPVEaibkCMrs2Snw5zyHe28tErvpl7zOiA=
