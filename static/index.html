@@ -212,6 +212,7 @@ table tr th {
                     result["[http_status]"] = http.status;
                     callback_function(result);
                     console.error(JSON.stringify(result));
+                    throw ex;
                 }
             }
         }
@@ -238,7 +239,6 @@ table tr th {
         }
 
         var destination = breadcrumbs[breadcrumbs.length-2];
-        console.log(destination);
         var destination_function = destination["function"];
         var destination_params = destination["params"];
         breadcrumbs.pop();
@@ -524,7 +524,6 @@ table tr th {
                             var key_up_function = function(event) {
                                 var target_column_name = columName;
                                 var x = function() {
-                                    console.log(target_column_name);
                                     record[target_column_name] = document.getElementById(target_column_name).value
                                 }
                                 x();
@@ -642,7 +641,7 @@ table tr th {
                         }
                     }
                 }
-                console.log(save_result);
+
                 if(values_changed_count > 0) {
                     crud_record(mode, table_name, page_index, save_result);
                 }  else {
@@ -715,7 +714,6 @@ table tr th {
         var where_clause = params["where_fields"];
         var mode = params["mode"];
 
-        console.log(where_clause);
         table_name = table_name.replace(/\\\"/g, "\"");
         document.title = "Holistic " + mode + " record " + table_name + " page";
         var params = {};
@@ -741,18 +739,20 @@ table tr th {
                 var new_record = {};
                 redraw_record_page(table_name, page_index, mode, result["data"], new_record);
             }
-
-            console.log(result);
         }
         send_http_request(params, callback_function);
     }
 
-    var display_number_of_records_for_table = function(table_name, page_index, number_of_records) {
+    var display_number_of_records_for_table = function(params, number_of_records) {
         var pages = document.getElementById("pages");
         if(!pages) {
             return;
         }
         removeAllChildElements(pages);
+
+        console.log(params);
+        var table_name = params["table_name"];
+        var page_index = params["page_index"];
 
         var min_page_index = 0;
         var max_page_index = 0;
@@ -827,6 +827,7 @@ table tr th {
             page_input.setAttribute("min", 1);
             page_input.setAttribute("max", (max_page_index+1));
             page_input.setAttribute("id", "current_page_number");
+            page_input.setAttribute("table_name", table_name);
 
             var navigate_page_function = function(event, onchange) {
                 if (event.key === "Enter" || onchange) {
@@ -855,8 +856,13 @@ table tr th {
                         current_page_value_int = max_page_index+1;
                     }
 
+                    var current_table_name = current_page_element.getAttribute("table_name");
+                    if(!current_table_name) {
+                        return;
+                    }
+
                     var _params = {};
-                    _params["table_name"] = table_name;
+                    _params["table_name"] = current_table_name;
                     _params["page_index"] = current_page_value_int-1;
                     navigate_to_view_table(_params);
                 }
@@ -955,7 +961,8 @@ table tr th {
         }
     }
 
-    var get_number_of_records_for_table = function(page_index, table_name) {
+    var get_number_of_records_for_table = function(input_params) {
+        var table_name = input_params["table_name"];
         table_name = table_name.replace(/\\\"/g, "\"");
         var temp_message_type = "GetTableCount_" + decodeURIComponent(table_name);
         var params = {"[queue]":temp_message_type};
@@ -963,7 +970,8 @@ table tr th {
             if(result["[errors]"]) {
                 return;
             }
-            display_number_of_records_for_table(table_name, page_index, result["data"]);
+            
+            display_number_of_records_for_table(input_params, result["data"]);
         }
         send_http_request(params, callback_function);    
     }
@@ -990,6 +998,8 @@ table tr th {
         var offset = page_index * PAGE_SIZE;
         var limit = PAGE_SIZE;
         var params = {"[queue]":temp_message_type,"[select_fields]":["[minimal_fields]"],"[include_schema]":true, "[limit]":limit, "[offset]":offset};
+        params["table_name"] = table_name.split('').join('');
+        params["page_index"] = page_index;
 
         var callback_function = function(result) {
             var message_type = Object.keys(result)[0]
@@ -1095,7 +1105,6 @@ table tr th {
                         const rowColumnData = document.createElement("td");
                         const rowColumnDataText = document.createTextNode(current_record[currentColumnName]);
 
-                        console.log(schema[currentColumnName]);
                         if(!(schema[currentColumnName]["primary_key"] || schema[currentColumnName]["foreign_key"])) {
                             rowColumnData.appendChild(rowColumnDataText);
                         } else if(schema[currentColumnName]["primary_key"]) {
@@ -1253,15 +1262,11 @@ table tr th {
             main_content.appendChild(table);
             main_content.appendChild(pages);
            
-            get_number_of_records_for_table(page_index, table_name);
+            get_number_of_records_for_table(params);
             main_content.appendChild(bottom_back_button);
-            
-           
-
 
             {
                 var foreign_key_table_names = Object.keys(foreign_key_query_data);
-                console.log(foreign_key_table_names);
                 for(var _i = 0; _i < foreign_key_table_names.length; _i++) {
                     var _temp_message_type = "ReadRecords_" + decodeURIComponent(foreign_key_table_names[_i]);
                     var _foreign_key_details = foreign_key_query_data[foreign_key_table_names[_i]];
@@ -1425,7 +1430,6 @@ table tr th {
     }
 
     create_record_branch_instance = function(identifier) {
-        console.log(identifier);
         var button_id = "build_branch_id_button_" + identifier["branch_id"];
         var button = document.getElementById(button_id);
         button.setAttribute("disabled", true);
@@ -1797,11 +1801,6 @@ table tr th {
                 }
             }
 
-            console.log(result);
-            console.log(setup);
-            console.log(run);
-            console.log(teardown);
-
             const setup_span = document.createElement("span");
             setup_span.setAttribute("class", "col-1 col-s-1");
 
@@ -2081,7 +2080,6 @@ table tr th {
                 current_branch_instance = branch_instances[i];
                 current_branch_instance["branch_name"] = branches[current_branch_instance["branch_id"]]["name"];
                 current_branch_instance["repository_id"] = branches[current_branch_instance["branch_id"]]["repository_id"];
-                console.log(current_branch_instance["metrics"]);
             }
             refresh_build_respositories(branch_instances);
         }
