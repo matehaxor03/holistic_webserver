@@ -227,10 +227,10 @@ table tr th {
         breadcrumb["params"] = params;
         breadcrumbs.push(breadcrumb);
         
-        var destination = breadcrumbs[breadcrumbs.length-1];
-        var destination_function = destination["function"];
-        var destination_params = destination["params"];
-        destination_function(destination_params);
+        console.log("navigating to page with params:");
+        console.log(method.name);
+        console.log(params);
+        method(params);
     }
 
     var navigate_back = function() {
@@ -248,7 +248,7 @@ table tr th {
 
     var navigate_to_page_function = function(method, params) {
         var _method = method;
-        var _params = Object.assign({}, params);
+        var _params = params;
         var f = function() {
             navigate_to_page(_method, _params);
         }
@@ -707,12 +707,12 @@ table tr th {
         }
     }
 
-    var navigate_to_manage_record = function(params) {
+    var navigate_to_manage_record = function(input_params) {
         reset_view_state();
-        var table_name = params["table_name"];
-        var page_index = params["page_index"];
-        var where_clause = params["where_fields"];
-        var mode = params["mode"];
+        var table_name = input_params["table_name"];
+        var page_index = input_params["page_index"];
+        var where_fields = input_params["where_fields"];
+        var mode = input_params["mode"];
 
         table_name = table_name.replace(/\\\"/g, "\"");
         document.title = "Holistic " + mode + " record " + table_name + " page";
@@ -720,7 +720,7 @@ table tr th {
 
         if(mode !== "create") {
             var temp_message_type = "ReadRecords_" + decodeURIComponent(table_name);
-            params = {"[queue]":temp_message_type, "[where_fields]":where_clause, "[include_schema]":true};
+            params = {"[queue]":temp_message_type, "[where_fields]":where_fields, "[include_schema]":true};
         } else {
             var temp_message_type = "GetSchema_" + decodeURIComponent(table_name);
             params = {"[queue]":temp_message_type};
@@ -740,6 +740,7 @@ table tr th {
                 redraw_record_page(table_name, page_index, mode, result["data"], new_record);
             }
         }
+        console.log(params);
         send_http_request(params, callback_function);
     }
 
@@ -1119,21 +1120,19 @@ table tr th {
                                     var _page_index = page_index;
                                     var _params = {};
                                     _params["table_name"] = _table_name;
-                                    _params["page_index"] = page_index;
-                                    _params["where_clause"] = _id;
-                                    _params["mode"] = "update"
-                                    var x = function() {
-                                        navigate_to_page(navigate_to_manage_record, _params);
-                                    }
-                                    return x;
+                                    _params["where_fields"] = _id;
+                                    _params["mode"] = "update";
+                                    console.log(_params);
+                                    return navigate_to_page_function(navigate_to_manage_record, _params);
                                 }
+                                
                                 var temp_identifier_array = [];
                                 var temp_identifier = {};
                                 temp_identifier["column"] = currentColumnName;
                                 temp_identifier["value"] = current_record[currentColumnName];
                                 temp_identifier["logic"] = "=";
                                 temp_identifier_array.push(temp_identifier);
-                                editButton.onclick = edit_function(table_name, temp_identifier_array);
+                                editButton.onclick = edit_function(table_name, Object.assign([], temp_identifier_array));
                                 editButton.appendChild(editButtonText);
                                 rowColumnData.appendChild(editButton);
                             }
@@ -1149,21 +1148,18 @@ table tr th {
                                     var _id = Object.assign([], id);
                                     var _params = {};
                                     _params["table_name"] = _table_name;
-                                    _params["page_index"] = page_index;
-                                    _params["where_clause"] = _id;
-                                    _params["mode"] = "update"
-                                    var x = function() {
-                                        navigate_to_page(navigate_to_manage_record, _params);
-                                    }
-                                    return x;
+                                    _params["where_fields"] = _id;
+                                    _params["mode"] = "update";
+                                    return navigate_to_page_function(navigate_to_manage_record, _params);
                                 }
+
                                 var temp_identifier_array = [];
                                 var temp_identifier = {};
                                 temp_identifier["column"] = currentColumnName;
                                 temp_identifier["value"] = current_record[currentColumnName];
                                 temp_identifier["logic"] = "=";
                                 temp_identifier_array.push(temp_identifier);
-                                editButton.onclick = edit_function(schema[currentColumnName]["foreign_key_table_name"], temp_identifier_array);
+                                editButton.onclick = edit_function(schema[currentColumnName]["foreign_key_table_name"], Object.assign([], temp_identifier_array));
                                 editButton.appendChild(editButtonText);
                                 rowColumnData.appendChild(editButton);
 
@@ -1203,13 +1199,9 @@ table tr th {
                         var _id = Object.assign([], id);
                         var _params = {};
                         _params["table_name"] = _table_name;
-                        _params["page_index"] = page_index;
-                        _params["where_clause"] = _id;
+                        _params["where_fields"] = _id;
                         _params["mode"] = "view"
-                        var x = function() {
-                            navigate_to_page(navigate_to_manage_record, _params);
-                        }
-                        return x;
+                        return navigate_to_page_function(navigate_to_manage_record, _params);
                     }
                     viewButton.onclick = view_function(identifier);
                     viewButton.appendChild(viewButtonText);
@@ -1223,14 +1215,11 @@ table tr th {
                         var _id = Object.assign([], id);
                         var _params = {};
                         _params["table_name"] = _table_name;
-                        _params["page_index"] = page_index;
-                        _params["where_clause"] = _id;
-                        _params["mode"] = "update"
-                        var x = function() {
-                            navigate_to_page(navigate_to_manage_record, _params);
-                        }
-                        return x;
+                        _params["where_fields"] = _id;
+                        _params["mode"] = "update";
+                        return navigate_to_page_function(navigate_to_manage_record, _params); 
                     }
+
                     editButton.onclick = edit_function(identifier);
                     editButton.appendChild(editButtonText);
                     rowColumnData.appendChild(editButton);
@@ -1249,9 +1238,9 @@ table tr th {
                 var _params = {};
                 _params["table_name"] = _table_name;
                 _params["page_index"] = page_index;
-                _params["where_clause"] = null;
+                _params["where_fields"] = null;
                 _params["mode"] = "create"
-                navigate_to_page(navigate_to_manage_record, _params);
+                return navigate_to_page_function(navigate_to_manage_record, _params);
             }
 
             var pages = document.createElement("div");
