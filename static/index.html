@@ -1099,7 +1099,7 @@ table tr th {
 
                 {
                     const rowData = document.createElement("tr");
-                    var identifier = {};
+                    var identifier = [];
                    
                     for(var j = 0; j < column_names.length; j++) {
                         const currentColumnName = column_names[j];
@@ -1132,6 +1132,7 @@ table tr th {
                                 temp_identifier["value"] = current_record[currentColumnName];
                                 temp_identifier["logic"] = "=";
                                 temp_identifier_array.push(temp_identifier);
+                                identifier.push(temp_identifier);
                                 editButton.onclick = edit_function(table_name, Object.assign([], temp_identifier_array));
                                 editButton.appendChild(editButtonText);
                                 rowColumnData.appendChild(editButton);
@@ -1159,6 +1160,7 @@ table tr th {
                                 temp_identifier["value"] = current_record[currentColumnName];
                                 temp_identifier["logic"] = "=";
                                 temp_identifier_array.push(temp_identifier);
+                                identifier.push(temp_identifier);
                                 editButton.onclick = edit_function(schema[currentColumnName]["foreign_key_table_name"], Object.assign([], temp_identifier_array));
                                 editButton.appendChild(editButtonText);
                                 rowColumnData.appendChild(editButton);
@@ -1184,10 +1186,6 @@ table tr th {
                         }
 
                         rowData.appendChild(rowColumnData);
-                        
-                        if(j < (column_names.length -1)) {
-                            identifier[currentColumnName] = current_record[currentColumnName];
-                        }
                     }
                     const rowColumnData = document.createElement("td");
                     
