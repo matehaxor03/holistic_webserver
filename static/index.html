@@ -1254,14 +1254,16 @@ table tr th {
             createButton.setAttribute("class", "button");
             const createButtonText = document.createTextNode("create");
             createButton.appendChild(createButtonText);
-            createButton.onclick = function () {
+
+            {
                 var _table_name = table_name.split('').join('');
                 var _params = {};
                 _params["table_name"] = _table_name;
                 _params["page_index"] = page_index;
                 _params["where_fields"] = null;
-                _params["mode"] = "create"
-                return navigate_to_page_function(navigate_to_manage_record, _params);
+                _params["mode"] = "create";
+                var create_on_click_function = navigate_to_page_function(navigate_to_manage_record, _params);
+                createButton.onclick = create_on_click_function;
             }
 
             var pages = document.createElement("div");
