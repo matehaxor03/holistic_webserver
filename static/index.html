@@ -420,9 +420,47 @@ table tr th {
         rowHeader.appendChild(value_label);
         table.appendChild(rowHeader);
 
+        var foreign_keys_buttons = [];
+
         for(var i = 0; i < column_names_sorted.length; i++) {
             const columName = column_names_sorted[i].split('').join('');
             const columnNameSchema = schema[columName];
+
+            if(columnNameSchema["foreign_keys"]) {
+            {
+                for(var j=0; j<columnNameSchema["foreign_keys"].length; j++) {
+                    {
+                        var current_foreign_key = columnNameSchema["foreign_keys"][j];
+                        var current_table_name = current_foreign_key["table_name"];
+                        var current_column = current_foreign_key["column_name"];
+
+                        var _button = document.createElement("button");
+                        _button.setAttribute("class", "button");
+                        var button_text = document.createTextNode(current_table_name);
+                        _button.appendChild(button_text);
+
+                        var _input_params = {};
+                        _input_params["table_name"] = current_table_name;
+                        _input_params["page_index"] = 0;
+                        
+                        var _input_array = [];
+                        var _where_field = {};
+                        
+                        _where_field["column"] = current_column;
+                        _where_field["logic"] = "=";
+                        _where_field["value"] = record[current_column];
+                        
+                        _input_array.push(_where_field);
+                        _input_params["where_fields"] = _input_array;
+                        
+                        var _function = navigate_to_page_function(navigate_to_view_table, _input_params);
+                        _button.onclick = _function;
+
+                        foreign_keys_buttons.push(_button);
+                    }
+                }
+            }
+        }
 
             if(mode == "create") {
                 if(columnNameSchema["primary_key"] && columnNameSchema["auto_increment"]) {
@@ -555,7 +593,14 @@ table tr th {
             table.appendChild(rowData);
         }
 
+       
+
         main_content.appendChild(top_back_button);
+
+        for(j=0; j<foreign_keys_buttons.length;j++) {
+            main_content.appendChild(foreign_keys_buttons[j]);
+        }
+
         main_content.appendChild(table);
         main_content.appendChild(bottom_back_button);
 
