@@ -1043,21 +1043,6 @@ table tr th {
         }
     }
 
-    var get_number_of_records_for_table = function(input_params) {
-        var table_name = input_params["table_name"];
-        table_name = table_name.replace(/\\\"/g, "\"");
-        var temp_message_type = "GetTableCount_" + decodeURIComponent(table_name);
-        var params = {"[queue]":temp_message_type};
-        var callback_function = function(result) {
-            if(result["[errors]"]) {
-                return;
-            }
-            
-            display_number_of_records_for_table(input_params, result["data"]);
-        }
-        send_http_request(params, callback_function);    
-    }
-
     var navigate_to_view_table = function(input_params) {
         reset_view_state();
 
@@ -1078,7 +1063,7 @@ table tr th {
         var temp_message_type = "ReadRecords_" + decodeURIComponent(table_name);
         var offset = page_index * PAGE_SIZE;
         var limit = PAGE_SIZE;
-        var params = {"[queue]":temp_message_type,"[select_fields]":["[minimal_fields]"],"[include_schema]":true, "[limit]":limit, "[offset]":offset};
+        var params = {"[queue]":temp_message_type,"[select_fields]":["[minimal_fields]"],"[include_schema]":true, "[include_count]":true, "[limit]":limit, "[offset]":offset};
         params["table_name"] = table_name.split('').join('');
         params["page_index"] = page_index;
         params["[where_fields]"] = where_fields;
@@ -1108,6 +1093,7 @@ table tr th {
 
             var payload = result;
             var records = payload["data"];
+            var count = payload["count"];
 
             var schema = result["schema"]; 
             var schema_keys =  Object.keys(schema);
@@ -1362,10 +1348,12 @@ table tr th {
             container_element.appendChild(table);
             container_element.appendChild(pages);
            
-            get_number_of_records_for_table(params);
             container_element.appendChild(bottom_back_button);
             removeAllChildElements(main_content);
             main_content.appendChild(container_element);
+
+            display_number_of_records_for_table(params, count);
+
             
             document.getElementById("content_heading").focus();
 
