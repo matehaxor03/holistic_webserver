@@ -144,6 +144,7 @@ table tr th {
     var build_step_group_name_lookup = {};
     var build_step_lookup = {};
     var build_step_name_lookup = {};
+    var quick_replace_name_lookup = {};
 
     var current_branch_instance_step_log_id = 0;
     var current_branch_instance_id = 0;
@@ -246,7 +247,10 @@ table tr th {
         var destination = breadcrumbs[breadcrumbs.length-1];
         var destination_function = destination["function"];
         var destination_params = destination["params"];
-        
+
+        destination_params["refresh_page"] = true;
+        params["refresh_page"] = true;
+
         if(method.toString() !== destination_function.toString() && JSON.stringify(params) !== JSON.stringify(destination_params)) {
             return
         }
@@ -1077,20 +1081,6 @@ table tr th {
             var should_refresh_page = false;
             var foreign_key_query_data = {};
 
-            const top_back_button = document.createElement("button");
-            top_back_button.setAttribute("class", "button");
-            top_back_button.setAttribute("id", "backRecordButton");
-            var top_back_button_text = document.createTextNode("back");
-            top_back_button.appendChild(top_back_button_text);
-            top_back_button.onclick = navigate_back_function();
-
-            const bottom_back_button = document.createElement("button");
-            bottom_back_button.setAttribute("class", "button");
-            bottom_back_button.setAttribute("id", "backRecordButton");
-            var bottom_back_button_text = document.createTextNode("back");
-            bottom_back_button.appendChild(bottom_back_button_text);
-            bottom_back_button.onclick = navigate_back_function();
-
             var payload = result;
             var records = payload["data"];
             var count = payload["count"];
@@ -1163,7 +1153,6 @@ table tr th {
                         const rowColumnHeaderText = document.createTextNode("actions");
                         rowColumnHeader.appendChild(rowColumnHeaderText);
                         rowHeader.appendChild(rowColumnHeader);
-
                         table.appendChild(rowHeader);
                     }
                 }
@@ -1184,6 +1173,7 @@ table tr th {
                                 const editButton = document.createElement("a");
                                 editButton.setAttribute("rel", "tag");
                                 editButton.setAttribute("href", "#");
+                                editButton.setAttribute("class", "quick-replace-table-name-" + table_name + "-column-name-" + currentColumnName + "-id-" + current_record[currentColumnName]);
                                 const editButtonText = document.createTextNode(current_record[currentColumnName]);
                                 var edit_function = function (table_name, id) {
                                     var _table_name = table_name.split('').join('');
@@ -1214,7 +1204,17 @@ table tr th {
                                 editButton.setAttribute("rel", "tag");
                                 editButton.setAttribute("href", "#");
                                 editButton.setAttribute("class", "quick-replace-table-name-" + schema[currentColumnName]["foreign_key_table_name"] + "-column-name-" + currentColumnName + "-id-" + current_record[currentColumnName]);
-                                const editButtonText = document.createTextNode("loading...");
+
+                                {
+                                    var foreignKeyText = null;
+                                    if(!quick_replace_name_lookup[schema[currentColumnName]["foreign_key_table_name"]] || !quick_replace_name_lookup[schema[currentColumnName]["foreign_key_table_name"]][current_record[currentColumnName]]) {
+                                        foreignKeyText = document.createTextNode("loading...");
+                                    } else {
+                                        foreignKeyText = document.createTextNode(quick_replace_name_lookup[schema[currentColumnName]["foreign_key_table_name"]][current_record[currentColumnName]]);
+                                    }
+                                    editButton.appendChild(foreignKeyText);
+                                }
+
                                 var edit_function = function (table_name, id) {
                                     var _table_name = table_name.split('').join('');
                                     var _id = Object.assign([], id);
@@ -1233,7 +1233,6 @@ table tr th {
                                 temp_identifier_array.push(temp_identifier);
                                 identifier.push(temp_identifier);
                                 editButton.onclick = edit_function(schema[currentColumnName]["foreign_key_table_name"], Object.assign([], temp_identifier_array));
-                                editButton.appendChild(editButtonText);
                                 rowColumnData.appendChild(editButton);
 
                                 if(!foreign_key_query_data[schema[currentColumnName]["foreign_key_table_name"]]) {
@@ -1341,6 +1340,20 @@ table tr th {
             container_element = document.createElement("div");
             container_element.setAttribute("class", "col-12 col-s-12");
             
+            const top_back_button = document.createElement("button");
+            top_back_button.setAttribute("class", "button");
+            top_back_button.setAttribute("id", "backRecordButton");
+            var top_back_button_text = document.createTextNode("back");
+            top_back_button.appendChild(top_back_button_text);
+            top_back_button.onclick = navigate_back_function();
+
+            const bottom_back_button = document.createElement("button");
+            bottom_back_button.setAttribute("class", "button");
+            bottom_back_button.setAttribute("id", "backRecordButton");
+            var bottom_back_button_text = document.createTextNode("back");
+            bottom_back_button.appendChild(bottom_back_button_text);
+            bottom_back_button.onclick = navigate_back_function();
+
             removeAllChildElements(main_content);
             container_element.appendChild(title);
             container_element.appendChild(top_back_button);
@@ -1351,10 +1364,7 @@ table tr th {
             container_element.appendChild(bottom_back_button);
             removeAllChildElements(main_content);
             main_content.appendChild(container_element);
-
             display_number_of_records_for_table(params, count);
-
-            
             document.getElementById("content_heading").focus();
 
             {
@@ -1385,6 +1395,13 @@ table tr th {
                         var _schema = _payload["schema"];
                         var _primary_key_auto_increment = "";
 
+                        if(!quick_replace_name_lookup[_table_name]) {
+                            {
+                                var x = {};
+                                quick_replace_name_lookup[_table_name] = x;
+                            }
+                        }
+
                         var _column_definitions = Object.keys(_schema);
                         for(var _i=0; _i < _column_definitions.length; _i++) {
                             var _current_column_definition = _schema[_column_definitions[_i]];
@@ -1411,6 +1428,8 @@ table tr th {
                             var _column_name = _primary_key_auto_increment;
                             var _column_value = _current_record[_column_name];
                             var _quick_replace_class_name = "quick-replace-table-name-" + _table_name + "-column-name-" + _column_name + "-id-" + _column_value;
+
+                            quick_replace_name_lookup[_table_name][_column_value] = _name;
 
                             var _quick_replace_elements = document.getElementsByClassName(_quick_replace_class_name);
                             for(var _j=0;_j<_quick_replace_elements.length;_j++) {
