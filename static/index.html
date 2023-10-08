@@ -1267,6 +1267,10 @@ table tr th {
                         rowData.appendChild(rowColumnData);
                     }
                     const rowColumnData = document.createElement("td");
+                    var foreign_keys_buttons = get_foreign_key_buttons(schema, column_names_sorted, current_record);
+                    for(j=0; j<foreign_keys_buttons.length;j++) {
+                        rowColumnData.appendChild(foreign_keys_buttons[j]);
+                    }
 
                     if(table_name === "Branch") {
                         {
@@ -1321,6 +1325,8 @@ table tr th {
                     editButton.onclick = edit_function(identifier);
                     editButton.appendChild(editButtonText);
                     rowColumnData.appendChild(editButton);
+
+                    
 
                     rowData.appendChild(rowColumnData);
                     table.appendChild(rowData);
