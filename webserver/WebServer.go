@@ -157,6 +157,7 @@ func NewWebServer(port string, server_crt_path string, server_key_path string, q
 					start_server_errors = append(start_server_errors, fmt.Errorf("controller is nil: %s", temp_controller))
 					continue
 				}
+				fmt.Println("adding controller: /webserver_api/" + temp_controller_name)
 				http.HandleFunc("/webserver_api/" + temp_controller_name, *(temp_controller.GetProcessRequestFunction()))
 			}
 
