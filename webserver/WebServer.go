@@ -135,8 +135,6 @@ func NewWebServer(port string, server_crt_path string, server_key_path string, q
 		return server_key_path
 	}
 
-	
-
 	validate := func() []error {
 		return nil
 	}
@@ -149,7 +147,6 @@ func NewWebServer(port string, server_crt_path string, server_key_path string, q
 			var start_server_errors []error
 
 			temp_controller_names := get_controller_names()
-			//http.HandleFunc("/queue_api", processRequest)
 
 			for _, temp_controller_name := range temp_controller_names {
 				temp_controller, temp_controller_errors := get_controller_by_name(temp_controller_name)
@@ -169,13 +166,13 @@ func NewWebServer(port string, server_crt_path string, server_key_path string, q
 			}
 
 			if len(start_server_errors) > 0 {
+				fmt.Println(fmt.Errorf("%s", start_server_errors))
 				return start_server_errors
 			}
 
 			return nil
 		},
 	}
-	//setHolisticQueueServer(&x)
 
 	validate_errors := validate()
 	if validate_errors != nil {
